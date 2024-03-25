@@ -1,0 +1,283 @@
+<mat-toolbar color="primary">
+	<button mat-icon-button
+			color="accent"
+			class="example-icon"
+			aria-label="Example icon-button with menu icon"
+			(click)="sidenav.toggle()">
+		<mat-icon>menu</mat-icon>
+	</button>
+	<img src="./assets/images/logo161x20.png"
+		 alt="The official bookmarks logo featuring a teal bookmark icon to the left of the stylized lowercase text bookmarx in teal color, set against a clean background."
+		 aria-label="Bookmarks Logo">
+	<span class="example-spacer"></span>
+	<button mat-icon-button
+			color="accent"
+			class="example-icon favorite-icon"
+			aria-label="Add a new bookmark to the current folder"
+			title="Add a new bookmark to the current folder"
+			(click)="drawer.toggle()">
+		<mat-icon>bookmark_add</mat-icon>
+	</button>
+	<button mat-icon-button
+			color="accent"
+			[matMenuTriggerFor]="menu"
+			aria-label="Example icon-button with a menu">
+		<mat-icon>more_vert</mat-icon>
+	</button>
+	<mat-menu #menu="matMenu">
+		<button mat-menu-item
+				(click)="SignOut()">
+			<mat-icon>exit_to_app</mat-icon>
+			<span>Log Out</span>
+		</button>
+		<button mat-menu-item
+				(click)="ShowImportForm()">
+			<mat-icon>import_export</mat-icon>
+			<span>Import</span>
+		</button>
+	</mat-menu>
+</mat-toolbar>
+<mat-sidenav-container>
+	<mat-sidenav #sidenav
+				 mode="over"
+				 class="sidenav-container">
+		<p><button mat-button
+					(click)="sidenav.toggle()">Toggle</button></p>
+	</mat-sidenav>
+	<mat-sidenav-content>
+		<div class="bx-d-flex">
+			<div class="file-explorer__wrapper"
+				 [style.width.px]="FileExplorerWidthPX">
+				<div class="example-button-row">
+					<div class="bx-d-flex bx-justify-content-evenly">
+						<div class="example-button-container">
+							<button mat-icon-button
+									color="accent"
+									aria-label="Open all folders"
+									title="Open all folders"
+									class="bx-m-0"
+									(click)="OpenAllFolders()">
+								<mat-icon>arrow_drop_down</mat-icon>
+							</button>
+						</div>
+						<div class="example-button-container">
+							<button mat-icon-button
+									color="accent"
+									aria-label="Collapse all folders"
+									title="Collapse all folders"
+									class="bx-m-0"
+									(click)="CollapseAllFolders()">
+								<mat-icon>compress</mat-icon>
+							</button>
+						</div>
+					</div>
+				</div>
+				<!-- All Saved Bookmarks -->
+				<mat-list role="list"
+						  cdkDropList
+						  class="example-list"
+						  [cdkDropListData]="BookmarkCollections"
+						  (cdkDropListDropped)="HandleDrop($event)">
+					<mat-list-item role="list-item"
+								   cdkDrag
+								   *ngFor="let collection of BookmarkCollections; let i = index;"
+								   matRipple
+								   class="example-box"
+								   [cdkDragData]="collection"
+								   (cdkDragStarted)="HandleDragStart($event, collection)"
+								   (click)="OpenBookmarkCollection($event, collection)"
+								   (dblclick)="HandleDoubleClick($event, collection)"
+								   [style.padding-left.px]="collection.Depth * 20"
+								   [ngStyle]="{
+						'height': collection.IsCollapsed ? '0px' : 'auto',
+						'min-height': collection.IsCollapsed ? '0' : 'auto',
+						'padding-top': collection.IsCollapsed ? '0' : '5px',
+						'padding-bottom': collection.IsCollapsed ? '0' : '5px',
+						'border-bottom': collection.IsCollapsed ? 'none' : 'solid 1px #ccc'
+						}">
+						<div class="file-explorer__item bx-w-100 bx-d-flex bx-justify-content-between bx-align-items-center">
+							<div class="file-explorer__folder"
+								 [ngClass]="{'bx-ml-2': !collection.HasChildren}">
+								<button mat-icon-button
+										aria-label="Example icon button with a vertical three dot icon"
+										(click)="HandleDoubleClick($event, collection)"
+										*ngIf="collection.HasChildren">
+									<ng-container *ngIf="!collection.ChildCollectionsCollapsed">
+										<mat-icon aria-hidden="false"
+												  aria-label="Example home icon">keyboard_arrow_down</mat-icon>
+									</ng-container>
+									<ng-container *ngIf="collection.ChildCollectionsCollapsed">
+										<mat-icon aria-hidden="false"
+												  aria-label="Example home icon">keyboard_arrow_right</mat-icon>
+									</ng-container>
+								</button>
+								<p class="bx-m-0 bx-text-nowrap">
+									<span [innerHTML]="collection.Icon"></span>&nbsp;
+									<span>{{collection.Title}}</span>&nbsp;
+								</p>
+							</div>
+							<div class="bx-d-flex bx-justify-content-evenly bx-align-items-center">
+								<div>
+									<span class="collections__bookmark-count">{{collection.Bookmarks?.length}}</span>
+								</div>
+								<app-directory-menu [RespectiveBookmarkCollection]="collection"
+													(CollectionUpdated)="MarkCollectionsForDeletion($event)"></app-directory-menu>
+							</div>
+						</div>
+					</mat-list-item>
+					<mat-divider></mat-divider>
+				</mat-list>
+				<!-- All Saved Bookmarks End -->
+				<!-- All Pending Import Bookmarks -->
+				<mat-list role="list"
+						  class="example-list">
+					<mat-list-item role="list-item"
+								   *ngFor="let pendingCollection of BookmarkCollectionsPendingImport"
+								   matRipple
+								   class="example-box"
+								   [style.padding-left.px]="pendingCollection.Depth * 20">
+						<div class="file-explorer__item bx-w-100 bx-d-flex bx-justify-content-between bx-align-items-center">
+							<div class="file-explorer__folder">
+								<p class="bx-m-0 bx-text-nowrap">
+									<span [innerHTML]="pendingCollection.Icon"></span>&nbsp;
+									<span>{{pendingCollection.Title}}</span>&nbsp;
+								</p>
+							</div>
+							<div>
+								<span class="collections__bookmark-count">{{pendingCollection.Bookmarks?.length}}</span>
+							</div>
+						</div>
+					</mat-list-item>
+					<mat-divider></mat-divider>
+				</mat-list>
+				<!-- All Pending Import Bookmarks End -->
+			</div>
+			<div class="file-explorer__handle"
+				 (mousedown)='OnResizableClick($event)'
+				 role="separator"
+				 aria-label="Resize file explorer"
+				 tabindex="0"
+				 aria-grabbed="false">
+			</div>
+			<div class="bookmarks__output">
+				<ng-container *ngIf="BookmarkImportState != 0">
+					<div class="bx-h-100 bx-d-flex bx-align-items-center bx-justify-content-center bx-text-center">
+						<div>
+							<ng-container *ngIf="BookmarkImportState == 1 || BookmarkImportState == 2">
+								<p>Try importing your bookmarks to get started.</p>
+								<form class="example-form">
+									<mat-form-field class="example-full-width"
+													appearance="fill">
+										<mat-label>Collection Name</mat-label>
+										<input type="email"
+											   matInput
+											   [formControl]="emailFormControl"
+											   [errorStateMatcher]="matcher"
+											   placeholder="Ex. DESKTOP-123456 Chrome">
+										<mat-error *ngIf="emailFormControl.hasError('minlength') && !emailFormControl.hasError('required')">
+											Name must be at least 3 characters long
+										</mat-error>
+										<mat-error *ngIf="emailFormControl.hasError('required')">
+											Email is <strong>required</strong>
+										</mat-error>
+									</mat-form-field>
+									<button type="submit"
+											mat-raised-button
+											color="accent"
+											(click)="ImportExistingBookmarks()"
+											[disabled]="emailFormControl.invalid"
+											aria-label="Import Bookmarks">Import Bookmarks</button>
+								</form>
+							</ng-container>
+							<ng-container *ngIf="BookmarkImportState == 3">
+								<p class="bookmarks__save-message">Feel free to save your changes once you're happy with them, or simply cancel and give it another go if needed! 😊</p>
+								<button mat-raised-button
+										color="warn"
+										(click)="CancelImportingBookmarks()"
+										class="bookmarks__import-btn">
+									<mat-icon>delete</mat-icon> Cancel
+								</button>
+								<button mat-raised-button
+										color="accent"
+										(click)="UpsertMainBookmarks(true)"
+										class="bookmarks__import-btn">
+									<mat-icon>save</mat-icon> Save
+								</button>
+							</ng-container>
+						</div>
+					</div>
+				</ng-container>
+				<ng-container *ngIf="ActiveCollection != null && BookmarkImportState == 0">
+					<div class="bx-h-100">
+						<div class="bookmarks__header bx-d-flex bx-justify-content-between">
+							<p>{{ActiveCollection?.Title}}</p>
+							<span>{{ActiveCollection?.Bookmarks?.length}}</span>
+						</div>
+						<hr />
+						<div *ngFor="let bookmark of ActiveCollection?.Bookmarks">
+							<a [href]="SanitizeUrl(bookmark.Url)"
+							   target="_blank">
+								{{bookmark.Title}}
+							</a>
+							<mat-divider></mat-divider>
+						</div>
+						<ng-container *ngIf="ActiveCollection?.Bookmarks?.length == 0">
+							<div class="bx-w-100 bx-h-100 bx-d-flex bx-align-items-center bx-justify-content-center">
+								<p>0 saved bookmarks.</p>
+							</div>
+						</ng-container>
+					</div>
+				</ng-container>
+			</div>
+		</div>
+	</mat-sidenav-content>
+</mat-sidenav-container>
+<!-- Add Bookmark Drawer -->
+<mat-drawer-container class="add-bookmark__container"
+					  autosize>
+	<mat-drawer #drawer
+				class="add-bookmark__drawer"
+				mode="side"
+				position="end">
+		<div class="example-sidenav-content">
+			<button type="button"
+					mat-button
+					(click)="drawer.toggle()">
+				Toggle sidenav
+			</button>
+			<p>Add new bookmark to {{ActiveCollection?.Title}}</p>
+			<form class="example-form"
+				  [formGroup]="AddBookmarkFormGroup"
+				  (ngSubmit)="AddNewBookmark()">
+				<mat-form-field class="example-full-width"
+								appearance="fill">
+					<mat-label>Bookmark Title</mat-label>
+					<input matInput
+						   placeholder="Title"
+						   formControlName="bookmarkTitle">
+				</mat-form-field>
+				<mat-error *ngIf="(AddBookmarkFormGroup.touched || AddBookmarkFormGroup.dirty)
+								&& AddBookmarkFormGroup.hasError('required', 'bookmarkTitle')">
+					Title is <strong>required</strong>
+				</mat-error>
+				<mat-form-field class="example-full-width"
+								appearance="fill">
+					<mat-label>URL</mat-label>
+					<input matInput
+						   placeholder="URL"
+						   formControlName="bookmarkUrl">
+				</mat-form-field>
+				<mat-error *ngIf="(AddBookmarkFormGroup.touched || AddBookmarkFormGroup.dirty)
+								&& AddBookmarkFormGroup.hasError('required', 'bookmarkUrl')">
+					URL is <strong>required</strong>
+				</mat-error>
+				<button type="submit"
+						mat-raised-button
+						color="accent"
+						[disabled]="AddBookmarkFormGroup.invalid"
+						aria-label="Import Bookmarks">Save</button>
+			</form>
+		</div>
+	</mat-drawer>
+</mat-drawer-container>
+<!-- Add Bookmark Drawer End -->

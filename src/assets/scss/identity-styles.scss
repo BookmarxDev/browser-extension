@@ -1,0 +1,55 @@
+.identity-form
+{
+	height: 100%;
+}
+
+.form-identity
+{
+	padding-top: 20px;
+	max-width: 350px;
+	width: 100%;
+	margin: 0 auto;
+
+	&__container
+	{
+		background: rgba(12, 12, 13, .5);
+		border-radius: 25px;
+	}
+
+	&__header
+	{
+		color: whitesmoke;
+	}
+}
+
+.form-identity .form-control
+{
+	position: relative;
+	box-sizing: border-box;
+	height: auto;
+	padding: 10px;
+	font-size: 16px;
+}
+
+.form-identity .form-control:focus
+{
+	z-index: 2;
+}
+
+.form-identity input[type="text"]
+{
+	margin-bottom: 8px;
+}
+
+.form-identity input[type="email"]
+{
+	margin-bottom: 8px;
+}
+
+.form-identity input[type="password"]
+{
+	margin-bottom: 8px;
+}
+
+.main-logo
+{}

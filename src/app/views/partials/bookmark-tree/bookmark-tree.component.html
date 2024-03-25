@@ -1,0 +1,28 @@
+<ng-container *ngIf="item.Url == null || item.Url == undefined || item.Url == ''">
+	<div cdkDropList
+		 class="example-list"
+		 [id]="parentItemId"
+		 [cdkDropListData]="parentItem"
+		 [cdkDropListConnectedTo]="allDropListsIds"
+		 (cdkDropListDropped)="onDragDrop($event)">
+		<div cdkDrag
+			 [id]="item.Id"
+			 [cdkDragData]="item"
+			 class="example-box">
+			<div title="Drag this item with children"
+				 class="cdk-drag-handle">
+				{{item.Title}}
+			</div>
+		</div>
+	</div>
+</ng-container>
+<ng-container *ngIf="item.Children?.length > 0">
+	<div *ngFor="let subItem of item.Children"
+		 style="margin-left: 10px;">
+		<app-bookmark-tree [item]="subItem"
+						   [parentItem]="item"
+						   [connectedDropListsIds]="allDropListsIds"
+						   (itemDrop)="onDragDrop($event)">
+		</app-bookmark-tree>
+	</div>
+</ng-container>

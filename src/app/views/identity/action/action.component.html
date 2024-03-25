@@ -1,0 +1,112 @@
+<div class="container-fluid text-center identity-form">
+	<div class="row align-items-center h-100">
+		<div class="col">
+			<ng-container *ngIf="IsPasswordResetAction">
+				<form class="form-identity"
+					  [formGroup]="PasswordResetForm"
+					  (ngSubmit)="ProcessPasswordReset()">
+					<a class="btn btn-link"
+					   routerLink="/"
+					   aria-label="Click to go to the home page">
+						<img class="mb-4 main-logo"
+							 src="/assets/images/logos/main-logo-for-accounts.jpg"
+							 alt="Pictyrs logo with two polaroids"
+							 width="250"
+							 height="83">
+					</a>
+					<h1 class="h3 mb-3 font-weight-normal">Welcome</h1>
+					<div *ngIf="FormError != ''"
+						 class="alert alert-danger"
+						 role="alert">
+						<span>{{FormError}}</span>
+					</div>
+					<div *ngIf="FormSuccess != ''"
+						 class="alert alert-success"
+						 role="alert">
+						<span>{{FormSuccess}}</span>
+					</div>
+					<label for="newPassword"
+						   class="sr-only">New password</label>
+					<input type="password"
+						   class="form-control"
+						   name="newPassword"
+						   id="newPassword"
+						   autocomplete="off"
+						   aria-describedby="emailHelp"
+						   placeholder="New password"
+						   formControlName="newPassword"
+						   required>
+					<div *ngIf="NewPassword?.invalid && (NewPassword?.dirty || NewPassword?.touched)"
+						 class="alert alert-danger">
+						<div *ngIf="NewPassword.errors.required">
+							Password is required.
+						</div>
+						<div *ngIf="NewPassword.errors.minLength">
+							Password must be at least 8 characters.
+						</div>
+					</div>
+					<label for="newPasswordVerification"
+						   class="sr-only">Confirm password</label>
+					<input type="password"
+						   class="form-control"
+						   name="newPasswordVerification"
+						   id="newPasswordVerification"
+						   autocomplete="off"
+						   aria-describedby="passwordHelp"
+						   placeholder="Confirm password"
+						   formControlName="newPasswordVerification"
+						   required>
+					<div *ngIf="NewPasswordVerification.invalid && (NewPasswordVerification.dirty || NewPasswordVerification.touched)"
+						 class="alert alert-danger">
+						<div *ngIf="NewPasswordVerification.errors.required">
+							Password verification is required.
+						</div>
+						<div *ngIf="NewPasswordVerification.errors.minLength">
+							Password verification must be at least 8 characters.
+						</div>
+					</div>
+					<br />
+					<button class="btn btn-lg btn-primary btn-block"
+							type="submit"
+							[disabled]="!PasswordResetForm.valid">
+						Reset Password
+					</button>
+					<hr />
+					<div>
+						<a class="btn btn-link"
+						   routerLink="/account/signup">Don't have a Pictyrs account? Sign up</a>
+					</div>
+					<p class="mt-5 mb-3">&copy; {{ CurrentYear }}</p>
+				</form>
+			</ng-container>
+			<ng-container *ngIf="IsVerifyEmailAction">
+				<div class="form-identity">
+					<a class="btn btn-link"
+					   routerLink="/"
+					   aria-label="Click to go to the home page">
+						<img class="mb-4 main-logo"
+							 src="/assets/images/logos/main-logo-for-accounts.jpg"
+							 alt="Pictyrs logo with two polaroids"
+							 width="250"
+							 height="83">
+					</a>
+					<h1 class="h3 mb-3 font-weight-normal">Email verification</h1>
+					<div *ngIf="FormError != ''"
+						 class="alert alert-danger"
+						 role="alert">
+						<span>{{FormError}}</span>
+					</div>
+					<div *ngIf="FormSuccess != ''"
+						 class="alert alert-success"
+						 role="alert">
+						<span>{{FormSuccess}}</span>
+					</div>
+					<div>
+						<a class="btn btn-link"
+						   routerLink="/">Click here to go to the log in page</a>
+					</div>
+				</div>
+			</ng-container>
+		</div>
+	</div>
+</div>
