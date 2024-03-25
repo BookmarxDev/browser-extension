@@ -1,0 +1,14 @@
+<section>
+	<p class="controls__label">Are you sure you want to delete this collection?</p>
+	<div class="bx-d-flex bx-justify-content-evenly">
+		<button mat-flat-button
+				color="warn"
+				class="controls__button"
+				(click)="CloseDialog()">Cancel</button>
+		<button mat-flat-button
+				color="accent"
+				cdkFocusInitial
+				class="controls__button"
+				(click)="ConfirmDelete()">Confirm</button>
+	</div>
+</section>

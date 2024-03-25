@@ -1,0 +1,328 @@
+.toolbar
+{
+	&__title
+	{
+		color: var(--clr-accent);
+		margin: 0;
+		padding: 0;
+	}
+}
+
+.file-explorer
+{
+	&__wrapper
+	{
+		height: calc(100vh - 64px);
+		min-width: 25%;
+		max-width: 50%;
+		background-color: var(--clr-primary-800);
+		overflow-y: scroll;
+		overflow-x: hidden;
+	}
+
+	&__handle
+	{
+		background: var(--clr-primary-500);
+		width: 4px;
+		height: calc(100vh - 64px);
+		cursor: col-resize;
+	}
+
+	&__drag-indicator
+	{
+		height: 10px;
+		width: 1px;
+		background: #ccc;
+	}
+
+	&__folder
+	{
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+
+		>button
+		{
+			width: auto;
+			height: auto;
+			line-height: 1;
+		}
+	}
+}
+
+.example-spacer
+{
+	flex: 1 1 auto;
+}
+
+.example-list
+{
+	width: 100%;
+	overflow-x: hidden;
+	overflow-y: auto;
+	display: block;
+	background: linear-gradient(270deg, var(--clr-dark-smoke) 20%, var(--clr-light-smoke) 80%);
+	padding: 0;
+}
+
+.example-box
+{
+	padding: 5px;
+	border-bottom: solid 1px #ccc;
+	color: whitesmoke;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	box-sizing: border-box;
+	cursor: pointer;
+	background: var(--clr-dark-smoke);
+	font-size: 14px;
+}
+
+.example-form
+{
+	min-width: 150px;
+	max-width: 500px;
+	width: 100%;
+}
+
+.example-full-width
+{
+	width: 100%;
+}
+
+.cdk-drag-preview
+{
+	box-sizing: border-box;
+	border-radius: 4px;
+	box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+		0 8px 10px 1px rgba(0, 0, 0, 0.14),
+		0 3px 14px 2px rgba(0, 0, 0, 0.12);
+}
+
+.cdk-drag-placeholder
+{
+	opacity: 0;
+}
+
+.cdk-drag-animating
+{
+	transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.example-box:last-child
+{
+	border: none;
+}
+
+.example-list.cdk-drop-list-dragging .example-box:not(.cdk-drag-placeholder)
+{
+	transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.collections
+{
+	&__bookmark-count
+	{
+		font-size: 12px;
+	}
+}
+
+.bookmarks
+{
+	&__output
+	{
+		color: whitesmoke;
+		height: calc(100vh - 64px);
+		flex-grow: 1;
+		overflow-y: auto;
+		overflow-x: hidden;
+		background: linear-gradient(90deg, var(--clr-dark-smoke) 20%, var(--clr-light-smoke) 80%);
+	}
+
+	&__header
+	{
+		font-size: 1.6em;
+		padding: 10px;
+	}
+
+	&__save-message
+	{
+		padding: 0 15%;
+	}
+
+	&__import-btn
+	{
+		width: 150px;
+		margin: 0 5px;
+	}
+}
+
+a
+{
+	color: whitesmoke;
+	text-decoration: none;
+	font-size: 1.2em;
+}
+
+$accent-color: var(--clr-accent);
+
+::ng-deep .mat-form-field
+{
+	.mat-input-element
+	{
+		color: $accent-color;
+	}
+
+	.mat-form-field-label
+	{
+		color: $accent-color;
+	}
+
+	.mat-form-field-underline
+	{
+		background-color: $accent-color;
+	}
+
+	.mat-form-field-ripple
+	{
+		background-color: $accent-color;
+	}
+
+	.mat-form-field-required-marker
+	{
+		color: $accent-color;
+	}
+}
+
+::ng-deep .mat-form-field.mat-focused
+{
+	.mat-form-field-label
+	{
+		color: $accent-color;
+	}
+
+	.mat-form-field-ripple
+	{
+		background-color: $accent-color;
+	}
+
+	.mat-form-field-required-marker
+	{
+		color: $accent-color;
+	}
+
+	.mat-input-element
+	{
+		color: whitesmoke;
+		caret-color: $accent-color;
+	}
+
+	.mat-input-element::-webkit-input-placeholder
+	{
+		/* Chrome/Opera/Safari */
+		color: $accent-color;
+	}
+
+	.mat-input-element::-moz-placeholder
+	{
+		/* Firefox 19+ */
+		color: $accent-color;
+	}
+
+	.mat-input-element:-ms-input-placeholder
+	{
+		/* IE 10+ */
+		color: $accent-color;
+	}
+
+	.mat-input-element:-moz-placeholder
+	{
+		/* Firefox 18- */
+		color: $accent-color;
+	}
+}
+
+/* Leave out for now, but if needed modify alert style here */
+// ::ng-deep .mat-form-field.mat-form-field-invalid
+// {
+// 	.mat-input-element
+// 	{
+// 		color: #ff33cc;
+// 	}
+
+// 	.mat-form-field-label
+// 	{
+// 		color: #ff33cc;
+
+// 		.mat-form-field-required-marker
+// 		{
+// 			color: #ff33cc;
+// 		}
+// 	}
+
+// 	.mat-form-field-ripple
+// 	{
+// 		background-color: #ff33cc;
+// 	}
+// }
+
+section
+{
+	display: table;
+}
+
+.example-label
+{
+	display: table-cell;
+	font-size: 14px;
+	margin-left: 8px;
+	min-width: 120px;
+}
+
+.example-button-row
+{
+	display: table-cell;
+	width: 490px;
+	position: sticky;
+	top: 0;
+	z-index: 10;
+	background-color: var(--clr-primary-800);
+}
+
+.example-button-row .mat-button-base
+{
+	margin: 8px 8px 8px 0;
+}
+
+.example-button-container
+{
+	display: flex;
+	justify-content: center;
+}
+
+.sidenav-container
+{
+	width: 300px;
+	border: 1px solid rgba(0, 0, 0, 0.5);
+}
+
+.add-bookmark
+{
+	&__container
+	{
+		position: fixed;
+		top: 64px;
+		height: calc(100vh - 64px);
+		right: 0px;
+	}
+
+	&__drawer
+	{
+		width: 300px;
+	}
+}

@@ -1,0 +1,134 @@
+<div class="container-fluid text-center identity-form">
+	<div class="row align-items-center h-100">
+		<div class="col">
+			<form class="form-identity"
+				  [formGroup]="SignUpForm"
+				  (ngSubmit)="ProcessSignUpWithEmailAndPassword()">
+				<a class="btn btn-link"
+				   routerLink="/"
+				   aria-label="Click to go to the home page">
+					<img class="mb-4 main-logo"
+						 src="/assets/images/logos/main-logo-for-accounts.jpg"
+						 alt="Logo with two polaroids"
+						 width="250"
+						 height="83">
+				</a>
+				<h1 class="h3 mb-3 font-weight-normal">Sign up for an account</h1>
+				<div *ngIf="FormError != ''"
+					 class="alert alert-danger">
+					<span>{{FormError}}</span>
+				</div>
+				<div class="d-flex">
+					<label for="signUpFirstName"
+						   class="visually-hidden">First name</label>
+					<input type="text"
+						   class="form-control me-1"
+						   name="signUpFirstName"
+						   id="signUpFirstName"
+						   autocomplete="off"
+						   aria-describedby="emailHelp"
+						   placeholder="First name"
+						   formControlName="signUpFirstName"
+						   required>
+					<label for="signUpLastName"
+						   class="visually-hidden">Last name</label>
+					<input type="text"
+						   class="form-control ms-1"
+						   name="signUpLastName"
+						   id="signUpLastName"
+						   autocomplete="off"
+						   aria-describedby="emailHelp"
+						   placeholder="Last name"
+						   formControlName="signUpLastName"
+						   required>
+				</div>
+				<div *ngIf="SignUpFirstName?.invalid && (SignUpFirstName?.dirty && SignUpFirstName?.touched)"
+					 class="alert alert-danger">
+					<div *ngIf="SignUpFirstName.errors.required">
+						First name is required.
+					</div>
+					<div *ngIf="SignUpFirstName.errors.minLength">
+						First name must be at least 1 character.
+					</div>
+				</div>
+				<div *ngIf="SignUpLastName?.invalid && (SignUpLastName?.dirty && SignUpLastName?.touched)"
+					 class="alert alert-danger">
+					<div *ngIf="SignUpLastName.errors.required">
+						Last name is required.
+					</div>
+					<div *ngIf="SignUpLastName.errors.minLength">
+						Last name must be at least 1 character.
+					</div>
+				</div>
+				<label for="signUpEmail"
+					   class="visually-hidden">Email address</label>
+				<input type="email"
+					   class="form-control"
+					   name="signUpEmail"
+					   id="signUpEmail"
+					   autocomplete="off"
+					   aria-describedby="emailHelp"
+					   placeholder="Email address"
+					   formControlName="signUpEmail"
+					   required>
+				<div *ngIf="SignUpEmail?.invalid && (SignUpEmail?.dirty && SignUpEmail?.touched)"
+					 class="alert alert-danger">
+					<div *ngIf="SignUpEmail.errors.required">
+						Email is required.
+					</div>
+					<div *ngIf="SignUpEmail.errors.minLength">
+						Email must be at least 3 characters.
+					</div>
+				</div>
+				<label for="signUpPassword"
+					   class="visually-hidden">Password</label>
+				<input type="password"
+					   class="form-control"
+					   name="signUpPassword"
+					   id="signUpPassword"
+					   autocomplete="off"
+					   aria-describedby="passwordHelp"
+					   placeholder="Password"
+					   formControlName="signUpPassword"
+					   required>
+				<div *ngIf="SignUpPassword.invalid && (SignUpPassword.dirty && SignUpPassword.touched)"
+					 class="alert alert-danger">
+					<div *ngIf="SignUpPassword.errors.required">
+						Password is required.
+					</div>
+					<div *ngIf="SignUpPassword.errors.minLength">
+						Password must be at least 8 characters.
+					</div>
+				</div>
+				<button class="btn btn-lg btn-primary w-100"
+						type="submit"
+						[disabled]="!SignUpForm.valid">
+					Sign up
+				</button>
+				<p class="text-muted social-login-break">OR</p>
+				<div>
+					<button class="btn btn-light w-100 d-flex align-items-center justify-content-center login-btn__google"
+							type="button"
+							(click)="ProcessSignUpWithGoogle()">
+						<img src="/assets/images/social/google.svg"
+							 alt="Google logo icon"
+							 width="20"
+							 height="20"
+							 class="me-2" />
+						Sign up with Google
+					</button>
+				</div>
+				<hr />
+				<div>
+					<a class="btn btn-link"
+					   routerLink="/identity/login">Already have an account? Log in</a>
+				</div>
+				<p class="legal-banner">
+					By clicking the "Sign up" button, you are creating an account, and agree to our'
+					<a href="/about/terms-of-service">Terms of Service</a> and <a href="/about/privacy-policy">Privacy Policy</a>
+				</p>
+				<p class="mt-3 mb-3">&copy; {{ CurrentYear }}</p>
+			</form>
+		</div>
+	</div>
+</div>

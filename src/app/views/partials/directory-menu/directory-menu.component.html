@@ -1,0 +1,17 @@
+<button mat-icon-button
+		color="accent"
+		[matMenuTriggerFor]="appMenu">
+	<mat-icon>more_vert</mat-icon>
+</button>
+
+<mat-menu #appMenu="matMenu">
+	<ng-template matMenuContent>
+		<button mat-menu-item
+				aria-label="Delete folder"
+				title="Delete folder"
+				(click)="DeleteCollection()">
+			<mat-icon>folder_delete</mat-icon>
+			Delete
+		</button>
+	</ng-template>
+</mat-menu>

@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Bookmarx - Private Bookmark Manager",
+  "description": "The private, encrypted bookmark manager.",
+  "version": "1.0",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
+    "sandbox": "sandbox allow-scripts allow-forms allow-popups allow-modals; script-src 'self' 'unsafe-inline' 'unsafe-eval'; child-src 'self';"
+  },
+  "permissions": [
+    "activeTab",
+    "bookmarks"
+  ],
+  "action": {
+    "default_popup": "index.html",
+    "icons": {
+      "16": "icon16x16.png",
+      "32": "icon32x32.png",
+      "48": "icon48x48.png",
+      "128": "icon128x128.png",
+      "192": "icon192x192.png",
+      "256": "icon256x256.png",
+      "520": "icon520x520.png"
+    },
+    "default_icon": {
+      "128": "assets/images/icon128x128.png"
+    }
+  }
+}
