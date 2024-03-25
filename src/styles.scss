@@ -254,6 +254,11 @@ body
 
 	&-text
 	{
+		&-accent
+		{
+			color: var(--clr-accent);
+		}
+
 		&-nowrap
 		{
 			overflow: hidden;
@@ -287,6 +292,46 @@ body
 		&l-3
 		{
 			margin-left: 1.3em !important;
+		}
+
+		&t-1
+		{
+			margin-top: 1.1em !important;
+		}
+
+		&t-2
+		{
+			margin-top: 1.2em !important;
+		}
+
+		&t-3
+		{
+			margin-top: 1.3em !important;
+		}
+
+		&t-4
+		{
+			margin-top: 1.4em !important;
+		}
+
+		&t-5
+		{
+			margin-top: 1.5em !important;
+		}
+
+		&b-1
+		{
+			margin-bottom: 1.1em !important;
+		}
+
+		&b-2
+		{
+			margin-bottom: 1.2em !important;
+		}
+
+		&b-3
+		{
+			margin-bottom: 1.3em !important;
 		}
 	}
 

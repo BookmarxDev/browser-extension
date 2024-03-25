@@ -1,3 +1,5 @@
+@import '../../assets/scss/dark-form-styles.scss';
+
 .identity-form
 {
 	height: 100%;
@@ -14,11 +16,17 @@
 	{
 		background: rgba(12, 12, 13, .5);
 		border-radius: 5px;
+		padding: 10px;
 	}
 
 	&__header
 	{
 		color: whitesmoke;
+	}
+
+	&__warn
+	{
+		margin-bottom: 15px;
 	}
 }
 
@@ -51,5 +59,7 @@
 	margin-bottom: 8px;
 }
 
-.main-logo
-{}
+a
+{
+	color: var(--clr-accent);
+}
