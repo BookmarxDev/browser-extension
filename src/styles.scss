@@ -33,6 +33,22 @@ body
 	--clr-accent-800: #006d52;
 	--clr-accent-900: #005136;
 
+	--clr-warn-50: #ffebee;
+	--clr-warn-100: #ffcdd2;
+	--clr-warn-200: #ef9a9a;
+	--clr-warn-300: #e57373;
+	--clr-warn-400: #ef5350;
+	--clr-warn-500: #f44336;
+	--clr-warn: var(--clr-warn-500);
+	--clr-warn-600: #e53935;
+	--clr-warn-700: #d32f2f;
+	--clr-warn-800: #c62828;
+	--clr-warn-900: #b71c1c;
+	--clr-warn-A100: #ff8a80;
+	--clr-warn-A200: #ff5252;
+	--clr-warn-A400: #ff1744;
+	--clr-warn-A700: #d50000;
+
 	--clr-dark-smoke: #1a1a1a;
 	--clr-light-smoke: #333333;
 }
@@ -285,6 +301,13 @@ body
 		clip: rect(0, 0, 0, 0);
 		white-space: nowrap;
 		border: 0;
+	}
+
+	&-warn-card
+	{
+		background-color: var(--clr-warn-100);
+		border: 1px solid var(--clr-warn-300);
+		color: var(--clr-warn-700);
 	}
 
 	@for $i from 1 through 100

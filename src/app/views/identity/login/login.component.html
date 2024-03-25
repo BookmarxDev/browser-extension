@@ -15,10 +15,9 @@
 						 height="35">
 				</a>
 				<h1 class="form-identity__header">Log in to your account</h1>
-				<div *ngIf="FormError != ''"
-					 class="alert alert-danger">
-					<span>{{FormError}}</span>
-				</div>
+				<ng-container *ngIf="FormError != ''">
+					<mat-card class="bx-warn-card">{{ FormError }}</mat-card>
+				</ng-container>
 				<label for="signInEmail"
 					   class="bx-sr-only">Email address</label>
 				<input type="email"

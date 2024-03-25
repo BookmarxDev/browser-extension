@@ -59,7 +59,7 @@ export class LoginComponent extends BasePageDirective
 	public override ngOnInit(): void
 	{
 		particlesJS('particles-js', ParticlesConfig, function () { });
-		
+
 		let currentDate = new Date();
 		this.CurrentYear = currentDate.getFullYear().toString();
 	}
@@ -106,28 +106,23 @@ export class LoginComponent extends BasePageDirective
 					});
 			}).catch((err: any) =>
 			{
-				// Handle all form errors here
-				// https://firebase.google.com/docs/reference/js/firebase.auth.Auth?authuser=1#error-codes_12
-				// auth/invalid-email
-				// auth/user-disabled
-				// auth/user-not-found
-				// auth/wrong-password
-				let errorCode = err.code; // A code
-				//let errorMessage = err.message; // And a message for the code
-				let errorMessage = ""; // And a message for the code
+				let message = "";
 
-				switch (errorCode)
+				if (err.code == "auth/invalid-login-credentials")
 				{
-					// Any error just tell em the password or email is wrong
-					case "auth/invalid-email":
-					case "auth/wrong-password":
-					case "auth/user-not-found":
-					case "auth/user-disabled":
-						errorMessage = "Email or password incorrect.";
-						break;
+					// Handle all form errors here
+					message = "Email or password incorrect.";
+				}
+				else if (err.code == "auth/too-many-requests")
+				{
+					message = "Too many requests. Please reset your password to unlock your account.";
+				}
+				else
+				{
+					message = "An error occurred. Please try again.";
 				}
 
-				this.FormError = errorMessage;
+				this.FormError = message;
 				this._blockUI.stop();
 			});
 		// 			},
