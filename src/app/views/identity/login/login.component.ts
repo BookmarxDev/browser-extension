@@ -3,7 +3,6 @@ import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BasePageDirective } from '../../shared/base-page.directive';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
-import { Subscription } from 'rxjs';
 import { UserCredential, sendEmailVerification } from '@angular/fire/auth';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { AuthService } from 'src/app/domain/auth/services/auth.service';
@@ -23,7 +22,6 @@ export class LoginComponent extends BasePageDirective
 {
 	@BlockUI()
 	private _blockUI: NgBlockUI;
-	private _recaptchaSubscription: Subscription;
 
 	constructor(
 		private _route: ActivatedRoute,
@@ -58,8 +56,8 @@ export class LoginComponent extends BasePageDirective
 
 	public override ngOnInit(): void
 	{
-		particlesJS('particles-js', ParticlesConfig, function () { });
-		
+		particlesJS('particles-li-js', ParticlesConfig, function () { });
+
 		let currentDate = new Date();
 		this.CurrentYear = currentDate.getFullYear().toString();
 	}
@@ -106,28 +104,23 @@ export class LoginComponent extends BasePageDirective
 					});
 			}).catch((err: any) =>
 			{
-				// Handle all form errors here
-				// https://firebase.google.com/docs/reference/js/firebase.auth.Auth?authuser=1#error-codes_12
-				// auth/invalid-email
-				// auth/user-disabled
-				// auth/user-not-found
-				// auth/wrong-password
-				let errorCode = err.code; // A code
-				//let errorMessage = err.message; // And a message for the code
-				let errorMessage = ""; // And a message for the code
+				let message = "";
 
-				switch (errorCode)
+				if (err.code == "auth/invalid-login-credentials")
 				{
-					// Any error just tell em the password or email is wrong
-					case "auth/invalid-email":
-					case "auth/wrong-password":
-					case "auth/user-not-found":
-					case "auth/user-disabled":
-						errorMessage = "Email or password incorrect.";
-						break;
+					// Handle all form errors here
+					message = "Email or password incorrect.";
+				}
+				else if (err.code == "auth/too-many-requests")
+				{
+					message = "Too many requests. Please reset your password to unlock your account.";
+				}
+				else
+				{
+					message = "An error occurred. Please try again.";
 				}
 
-				this.FormError = errorMessage;
+				this.FormError = message;
 				this._blockUI.stop();
 			});
 		// 			},
@@ -136,11 +129,6 @@ export class LoginComponent extends BasePageDirective
 		// 				this._blockUI.stop();
 		// 			}
 		// 		});
-	}
-
-	public ngOnDestroy()
-	{
-		this._recaptchaSubscription != undefined ?? this._recaptchaSubscription.unsubscribe();
 	}
 
 	private SetUserDataAndRedirect(activeUserDetail: ActiveUserDetail): void

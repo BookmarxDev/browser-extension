@@ -1,5 +1,5 @@
-<div id="particles-js"
-	 class="bx-d-flex bx-text-center bx-align-items-center bx-justify-content-center identity-form">
+<div id="particles-li-js"
+	 class="particles-js bx-d-flex bx-text-center bx-align-items-center bx-justify-content-center identity-form">
 	<div class="bx-d-absolute">
 		<div class="form-identity__container">
 			<form class="form-identity"
@@ -15,60 +15,61 @@
 						 height="35">
 				</a>
 				<h1 class="form-identity__header">Log in to your account</h1>
-				<div *ngIf="FormError != ''"
-					 class="alert alert-danger">
-					<span>{{FormError}}</span>
-				</div>
-				<label for="signInEmail"
-					   class="bx-sr-only">Email address</label>
-				<input type="email"
-					   class="form-control"
-					   name="signInEmail"
-					   id="signInEmail"
-					   autocomplete="off"
-					   aria-describedby="emailHelp"
-					   placeholder="Email address"
-					   formControlName="signInEmail"
-					   required>
-				<div *ngIf="SignInEmail?.invalid && (SignInEmail?.dirty && SignInEmail?.touched)"
-					 class="alert alert-danger">
+				<ng-container *ngIf="FormError != ''">
+					<mat-card class="bx-warn-card form-identity__warn">{{ FormError }}</mat-card>
+				</ng-container>
+				<mat-form-field class="bx-w-100">
+					<mat-label>Email address</mat-label>
+					<input matInput
+						   type="email"
+						   class="form-control"
+						   name="signInEmail"
+						   id="signInEmail"
+						   autocomplete="off"
+						   aria-describedby="emailHelp"
+						   placeholder="Email address"
+						   formControlName="signInEmail"
+						   required>
+				</mat-form-field>
+				<mat-error *ngIf="SignInEmail?.invalid && (SignInEmail?.dirty && SignInEmail?.touched)">
 					<div *ngIf="SignInEmail.errors.required">
 						Email is required.
 					</div>
 					<div *ngIf="SignInEmail.errors.minLength">
 						Email must be at least 3 characters.
 					</div>
-				</div>
-				<label for="signInPassword"
-					   class="bx-sr-only">Password</label>
-				<input type="password"
-					   class="form-control"
-					   name="signInPassword"
-					   id="signInPassword"
-					   autocomplete="off"
-					   aria-describedby="passwordHelp"
-					   placeholder="Password"
-					   formControlName="signInPassword"
-					   required>
-				<div *ngIf="SignInPassword.invalid && (SignInPassword.dirty && SignInPassword.touched)"
-					 class="alert alert-danger">
+				</mat-error>
+				<mat-form-field class="bx-w-100">
+					<mat-label>Password</mat-label>
+					<input matInput
+						   type="password"
+						   class="form-control"
+						   name="signInPassword"
+						   id="signInPassword"
+						   autocomplete="off"
+						   aria-describedby="passwordHelp"
+						   placeholder="Password"
+						   formControlName="signInPassword"
+						   required>
+				</mat-form-field>
+				<mat-error *ngIf="SignInPassword.invalid && (SignInPassword.dirty && SignInPassword.touched)">
 					<div *ngIf="SignInPassword.errors.required">
 						Password is required.
 					</div>
 					<div *ngIf="SignInPassword.errors.minLength">
 						Password must be at least 8 characters.
 					</div>
-				</div>
-				<div class="text-left">
+				</mat-error>
+				<div class="bx-text-left">
 					<a class="btn btn-link"
 					   routerLink="/identity/forgot-password">Forgot your password?</a>
 				</div>
 				<br />
-				<button class="btn btn-lg btn-primary w-100"
-						type="submit"
-						mat-button
+				<button mat-raised-button
 						color="accent"
-						[disabled]="!SignInForm.valid">
+						class="bx-w-100"
+						type="submit"
+						[disabled]="SignInForm.invalid">
 					Log in
 				</button>
 				<hr />
@@ -76,7 +77,7 @@
 					<a class="btn btn-link"
 					   routerLink="/identity/signup">Don't have an account? Sign up</a>
 				</div>
-				<p class="mt-5 mb-3">&copy; {{ CurrentYear }}</p>
+				<p class="bx-text-accent bx-mt-5 bx-mb-3">&copy; {{ CurrentYear }}</p>
 			</form>
 		</div>
 	</div>

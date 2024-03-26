@@ -4,6 +4,9 @@ import { Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { AuthService } from 'src/app/domain/auth/services/auth.service';
+import { ParticlesConfig } from '../../shared/config/particles-config';
+import { MatSnackBar } from '@angular/material/snack-bar';
+declare let particlesJS: any;
 
 @Component({
 	selector: 'app-forgot-password',
@@ -15,7 +18,8 @@ export class ForgotPasswordComponent extends BasePageDirective
 	constructor(
 		private _route: ActivatedRoute,
 		private _titleService: Title,
-		private _authService: AuthService)
+		private _authService: AuthService,
+		private _snackBar: MatSnackBar)
 	{
 		super(_route, _titleService);
 	}
@@ -37,6 +41,8 @@ export class ForgotPasswordComponent extends BasePageDirective
 
 	public override ngOnInit(): void
 	{
+		particlesJS('particles-fp-js', ParticlesConfig, function () { });
+
 		let currentDate = new Date();
 		this.CurrentYear = currentDate.getFullYear().toString();
 	}
@@ -55,7 +61,10 @@ export class ForgotPasswordComponent extends BasePageDirective
 				this.ForgotPasswordForm.reset();
 				this.ForgotPasswordForm.markAsPristine();
 				this.ForgotPasswordForm.markAsUntouched();
-				this.FormMessage = "Password reset email sent. Please check your inbox.";
+				this._snackBar.open("Password reset email sent. Please check your inbox.", "Ok", {
+					politeness: 'polite',
+					duration: 5000
+				});
 			}).catch((err: any) =>
 			{
 				// Handle all form errors here

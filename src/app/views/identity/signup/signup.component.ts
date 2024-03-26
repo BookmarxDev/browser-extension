@@ -4,8 +4,6 @@ import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
-// import { ReCaptchaV3Service } from 'ng-recaptcha';
-import { Subscription } from 'rxjs';
 import { ActiveUserDetail } from 'src/app/domain/auth/models/active-user-detail';
 import { AuthService } from 'src/app/domain/auth/services/auth.service';
 import { GoogleAuthService } from 'src/app/domain/auth/services/google-auth.service';
@@ -13,6 +11,8 @@ import { UserCredential, sendEmailVerification } from '@angular/fire/auth';
 import { MemberAccountCreateRequest } from 'src/app/domain/membership/models/member-account-create-request';
 import { MembershipAuthService } from 'src/app/domain/membership/services/membership-auth.service';
 import { IdentityActionResponseDto } from 'src/app/domain/membership/models/identity-action-response-dto';
+import { ParticlesConfig } from '../../shared/config/particles-config';
+declare let particlesJS: any;
 
 @Component({
 	selector: 'app-signup',
@@ -23,13 +23,11 @@ export class SignupComponent extends BasePageDirective
 {
 	@BlockUI()
 	private _blockUI: NgBlockUI;
-	private _recaptchaSubscription: Subscription;
 	private _ig: string;
 
 	constructor(
 		private _route: ActivatedRoute,
 		private _titleService: Title,
-		// private _recaptchaV3Service: ReCaptchaV3Service,
 		private _authService: AuthService,
 		private _router: Router,
 		private _googleAuthService: GoogleAuthService,
@@ -74,35 +72,11 @@ export class SignupComponent extends BasePageDirective
 
 	public override	ngOnInit(): void
 	{
+		particlesJS('particles-su-js', ParticlesConfig, function () { });
+
 		let currentDate = new Date();
 		this.CurrentYear = currentDate.getFullYear().toString();
 		this._ig = this._route.snapshot.paramMap.get('ig');
-
-		// If this request comes in from a google login then handle the final processing
-		this._googleAuthService.ProcessRedirectResultFromGoogle(this._recaptchaSubscription, this._ig)
-			.then((activeUserDetail: ActiveUserDetail) =>
-			{
-				if (activeUserDetail)
-				{
-					this.SetUserDataAndRedirect(activeUserDetail);
-				}
-			}).catch((err: any) =>
-			{
-				// Handle all form errors here
-				// https://firebase.google.com/docs/reference/js/firebase.auth.Auth?authuser=1#error-codes_12
-				// auth/invalid-email
-				// auth/user-disabled
-				// auth/user-not-found
-				// auth/wrong-password
-				let errorCode = err.code; // A code
-				let errorMessage = err.message; // And a message for the code
-				this.FormError = err.message;
-			});
-	}
-
-	public ngOnDestroy()
-	{
-		this._recaptchaSubscription != undefined ?? this._recaptchaSubscription.unsubscribe();
 	}
 
 	//#endregion OnInit
@@ -209,14 +183,6 @@ export class SignupComponent extends BasePageDirective
 
 				this.FormError = errorMessage;
 			});
-	}
-
-	public ProcessSignUpWithGoogle(): void
-	{
-		// Reset any error messages
-		this.FormError = "";
-
-		this._authService.InitiateSignInWithGoogle();
 	}
 
 	//#endregion Signups
