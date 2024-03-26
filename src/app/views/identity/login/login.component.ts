@@ -3,7 +3,6 @@ import { Meta, Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BasePageDirective } from '../../shared/base-page.directive';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
-import { Subscription } from 'rxjs';
 import { UserCredential, sendEmailVerification } from '@angular/fire/auth';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { AuthService } from 'src/app/domain/auth/services/auth.service';
@@ -23,7 +22,6 @@ export class LoginComponent extends BasePageDirective
 {
 	@BlockUI()
 	private _blockUI: NgBlockUI;
-	private _recaptchaSubscription: Subscription;
 
 	constructor(
 		private _route: ActivatedRoute,
@@ -58,7 +56,7 @@ export class LoginComponent extends BasePageDirective
 
 	public override ngOnInit(): void
 	{
-		particlesJS('particles-js', ParticlesConfig, function () { });
+		particlesJS('particles-li-js', ParticlesConfig, function () { });
 
 		let currentDate = new Date();
 		this.CurrentYear = currentDate.getFullYear().toString();
@@ -131,11 +129,6 @@ export class LoginComponent extends BasePageDirective
 		// 				this._blockUI.stop();
 		// 			}
 		// 		});
-	}
-
-	public ngOnDestroy()
-	{
-		this._recaptchaSubscription != undefined ?? this._recaptchaSubscription.unsubscribe();
 	}
 
 	private SetUserDataAndRedirect(activeUserDetail: ActiveUserDetail): void

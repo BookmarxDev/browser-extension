@@ -1,5 +1,5 @@
-<div id="particles-js"
-	 class="bx-d-flex bx-text-center bx-align-items-center bx-justify-content-center identity-form">
+<div id="particles-li-js"
+	 class="particles-js bx-d-flex bx-text-center bx-align-items-center bx-justify-content-center identity-form">
 	<div class="bx-d-absolute">
 		<div class="form-identity__container">
 			<form class="form-identity"
@@ -60,15 +60,15 @@
 						Password must be at least 8 characters.
 					</div>
 				</mat-error>
-				<div class="text-left">
+				<div class="bx-text-left">
 					<a class="btn btn-link"
 					   routerLink="/identity/forgot-password">Forgot your password?</a>
 				</div>
 				<br />
-				<button class="bx-w-100"
-						type="submit"
-						mat-raised-button
+				<button mat-raised-button
 						color="accent"
+						class="bx-w-100"
+						type="submit"
 						[disabled]="SignInForm.invalid">
 					Log in
 				</button>
