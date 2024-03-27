@@ -16,6 +16,7 @@ import { ErrorStateMatcher } from '@angular/material/core';
 import { BookmarkImportStateType } from 'src/app/domain/bookmarks/enums/bookmark-import-state-type';
 import { MatMenu } from '@angular/material/menu';
 import * as openpgp from 'openpgp';
+import { GetAllBookmarksResponse } from 'src/app/domain/bookmarks/models/get-all-bookmarks-response';
 
 /** Error when invalid control is dirty, touched, or submitted. */
 export class MyErrorStateMatcher implements ErrorStateMatcher
@@ -107,11 +108,49 @@ export class HomeComponent extends BasePageDirective
 		this.ShowProgressBar = true;
 		this._bookmarksService.GetAll()
 			.subscribe({
-				next: (result: BookmarkCollection[]) =>
+				next: async (result: GetAllBookmarksResponse) =>
 				{
-					if (result != null && result?.length > 0)
+					if (result != null && result?.BookmarkCollections?.length > 0)
 					{
-						this.BookmarkCollections = [...result];
+						// This is going to be lengthy
+						let decryptedCollections: BookmarkCollection[] = [];
+
+						let user = this._authService.GetCurrentUser();
+						const privateKey = await openpgp.decryptKey({
+							privateKey: await openpgp.readPrivateKey({ armoredKey: result.EncryptedPrivateKey }),
+							passphrase: user.UserHash
+						});
+
+						for (let i = 0; i < result.BookmarkCollections.length; i++)
+						{
+							let collection = result.BookmarkCollections[i];
+							let mappedCollection = new BookmarkCollection();
+							mappedCollection.Map(collection);
+
+							let collectionTitleArmored = await openpgp.readMessage({
+								armoredMessage: collection.Title // Parse armored message
+							});
+
+							let { data: decryptedTitle, signatures } = await openpgp.decrypt({
+								message: collectionTitleArmored,
+								// Consider signing with pub key
+								decryptionKeys: privateKey
+							});
+
+							mappedCollection.Title = decryptedTitle;
+
+							// check signature validity (signed messages only)
+							// try {
+							//     await signatures[0].verified; // throws on invalid signature
+							//     console.log('Signature is valid');
+							// } catch (e) {
+							//     throw new Error('Signature could not be verified: ' + e.message);
+							// }
+
+							decryptedCollections.push(mappedCollection);
+						}
+
+						this.BookmarkCollections = [...decryptedCollections];
 						this.ActiveCollection = this.BookmarkCollections[0];
 					}
 					else
