@@ -1,16 +1,20 @@
 export class MemberAccountCreateRequest
 {
+	public AccessToken: string;
+
 	public APID: string;
 
 	public EmailAddress: string;
 
 	public FirstName: string;
 
+	public IG: string;
+
 	public LastName: string;
 
-	public AccessToken: string;
+	public PasswordProtectedPrivateKey: string;
 
-	public ReCAPTCHAToken: string;
+	public PublicKey: string;
 
-	public IG: string;
+	public RevocationCertificate: string;
 }

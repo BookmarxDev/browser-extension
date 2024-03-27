@@ -12,6 +12,8 @@ import { MemberAccountCreateRequest } from 'src/app/domain/membership/models/mem
 import { MembershipAuthService } from 'src/app/domain/membership/services/membership-auth.service';
 import { IdentityActionResponseDto } from 'src/app/domain/membership/models/identity-action-response-dto';
 import { ParticlesConfig } from '../../shared/config/particles-config';
+import * as openpgp from 'openpgp';
+
 declare let particlesJS: any;
 
 @Component({
@@ -115,11 +117,8 @@ export class SignupComponent extends BasePageDirective
 					{
 						if (token != "")
 						{
-							// Execute the reCAPTCHA v3
-							// this._recaptchaSubscription = this._recaptchaV3Service.execute("signup_action")
-							// 	.subscribe({
-							// 		next: (reCAPTCHAToken: string) =>
-							// 		{
+							const fullName = `${ firstName } ${ lastName }`;
+
 							// After signup we don't care that they verify their email, next time they 
 							// log in they'll be asked to verify it. Just make it easy right now.
 							// Need to manually set the data so the auth guard works
@@ -130,14 +129,13 @@ export class SignupComponent extends BasePageDirective
 							memberAccountCreateRequest.EmailAddress = signupEmail;
 							memberAccountCreateRequest.FirstName = firstName;
 							memberAccountCreateRequest.LastName = lastName;
-							// memberAccountCreateRequest.ReCAPTCHAToken = reCAPTCHAToken;
 							memberAccountCreateRequest.IG = this._ig ?? "";
+
+							this.GenerateKeyPair(fullName, signupEmail, signupPassword);
 
 							this._membershipAuthService.CreateNewMemberAccount(memberAccountCreateRequest)
 								.subscribe((response: IdentityActionResponseDto) =>
 								{
-									const fullName = `${ firstName } ${ lastName }`;
-
 									let activeUserDetail = new ActiveUserDetail();
 									activeUserDetail.User = res.user;
 									activeUserDetail.OGID = response.OGID;
@@ -194,6 +192,22 @@ export class SignupComponent extends BasePageDirective
 		// Need to manually set the data so the auth guard works
 		this._authService.SetUserData(activeUserDetail);
 		this._router.navigate(['/']);
+	}
+
+	// https://www.npmjs.com/package/openpgp#generate-new-key-pair
+	private async GenerateKeyPair(name: string, email: string, password: string): Promise<void>
+	{
+		const { privateKey, publicKey, revocationCertificate } = await openpgp.generateKey({
+			type: 'ecc', // Type of the key, defaults to ECC
+			curve: 'curve25519', // ECC curve name, defaults to curve25519
+			userIDs: [{ name: name, email: email }], // you can pass multiple user IDs
+			passphrase: password, // protects the private key
+			format: 'armored' // output key format, defaults to 'armored' (other options: 'binary' or 'object')
+		});
+
+		console.log(privateKey);     // '-----BEGIN PGP PRIVATE KEY BLOCK ... '
+		console.log(publicKey);      // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
+		console.log(revocationCertificate); // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
 	}
 
 	//#endregion Private Methods

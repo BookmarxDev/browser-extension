@@ -69,3 +69,7 @@ root of the `Extension` project that contains more information and the configura
 
 ### ngx-markdown
 - https://www.npmjs.com/package/ngx-markdown/v/13.1.0
+
+### OpenPGP
+- https://github.com/openpgpjs
+- https://www.npmjs.com/package/openpgp
