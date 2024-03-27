@@ -13,6 +13,7 @@ import { MembershipAuthService } from 'src/app/domain/membership/services/member
 import { IdentityActionResponseDto } from 'src/app/domain/membership/models/identity-action-response-dto';
 import { ParticlesConfig } from '../../shared/config/particles-config';
 import * as openpgp from 'openpgp';
+import * as bcrypt from 'bcryptjs';
 
 declare let particlesJS: any;
 
@@ -197,14 +198,19 @@ export class SignupComponent extends BasePageDirective
 	// https://www.npmjs.com/package/openpgp#generate-new-key-pair
 	private async GenerateKeyPair(name: string, email: string, password: string): Promise<void>
 	{
+		// Generate a new salt
+		const salt = bcrypt.genSaltSync(10);
+		var hash = bcrypt.hashSync(password, salt);
+
 		const { privateKey, publicKey, revocationCertificate } = await openpgp.generateKey({
 			type: 'ecc', // Type of the key, defaults to ECC
 			curve: 'curve25519', // ECC curve name, defaults to curve25519
 			userIDs: [{ name: name, email: email }], // you can pass multiple user IDs
-			passphrase: password, // protects the private key
+			passphrase: hash, // protects the private key
 			format: 'armored' // output key format, defaults to 'armored' (other options: 'binary' or 'object')
 		});
 
+		console.log(salt);
 		console.log(privateKey);     // '-----BEGIN PGP PRIVATE KEY BLOCK ... '
 		console.log(publicKey);      // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
 		console.log(revocationCertificate); // '-----BEGIN PGP PUBLIC KEY BLOCK ... '

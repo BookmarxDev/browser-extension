@@ -16,5 +16,5 @@ export class MemberAccountCreateRequest
 
 	public PublicKey: string;
 
-	public RevocationCertificate: string;
+	public UserSalt: string;
 }
