@@ -331,29 +331,18 @@ export class HomeComponent extends BasePageDirective
 			let movedCollection = this.BookmarkCollections[viewModelCollection.currentIndex];
 			let leadingCollection = this.BookmarkCollections[viewModelCollection.currentIndex + 1];
 
-			// Gross hack to get around some quirks with drag and drop
-			// Check if the item was just dropped into a child collection
-			// that is currently collapsed. If it was then we need to move
-			// it down to the first instance of an array location where the
-			// collection is not collapsed.
-			// This needs to take place for both up and down movements.
-			if (leadingCollection.IsCollapsed)
+			if (laggingCollection != null && laggingCollection.ChildCollectionsCollapsed)
 			{
-				let leadingCollectionIndex = this.BookmarkCollections.indexOf(leadingCollection);
+				let laggingCollectionChildren = this.GetChildCollections(laggingCollection.Id);
 
-				for (let i = leadingCollectionIndex; i < this.BookmarkCollections.length; i++)
-				{
-					// Loop through until we find the first collection that isn't collapsed and then move
-					// the collection to the position just before it. This is a gross hack, but because 
-					// of how drag and drop works and how nested collections function we have to do it.
-					// Also update the leading collection as it's now different.
-					leadingCollection = this.BookmarkCollections[i];
-					if (!leadingCollection.IsCollapsed)
-					{
-						moveItemInArray(this.BookmarkCollections, viewModelCollection.currentIndex, i - 1);
-						break;
-					}
-				}
+				let laggingCollectionChildrenCount = laggingCollectionChildren.length;
+
+				let movedCollectionIndex = viewModelCollection.currentIndex + laggingCollectionChildrenCount;
+				moveItemInArray(this.BookmarkCollections, viewModelCollection.currentIndex, movedCollectionIndex);
+
+				laggingCollection = this.BookmarkCollections[movedCollectionIndex - 1];
+				movedCollection = this.BookmarkCollections[movedCollectionIndex];
+				leadingCollection = this.BookmarkCollections[movedCollectionIndex + 1];
 			}
 
 			// The way in which the user is dragging the item and how Angular Material
@@ -376,6 +365,12 @@ export class HomeComponent extends BasePageDirective
 					// Kick out as we don't need to perform any logic.
 					return;
 				}
+				else if (leadingCollection == null)
+				{
+					// Collection was dragged to the very bottom so reparent to root.
+					movedCollection.Depth = 0;
+					movedCollection.ParentId = null;
+				}
 				else
 				{
 					// Simply move the folder to the same level as the leading collection.
@@ -388,6 +383,12 @@ export class HomeComponent extends BasePageDirective
 				// Nothing happened so we don't do anything.
 				return;
 			}
+			else if (laggingCollection == null || leadingCollection == null)
+			{
+				// The collection was dropped at the very top or very bottom and now has no parent.
+				movedCollection.Depth = 0;
+				movedCollection.ParentId = null;
+			}
 			else
 			{
 				// When you drag UP the target slides down so we need to use the lagging collection.
@@ -398,7 +399,6 @@ export class HomeComponent extends BasePageDirective
 			// To figure out the depth change, take the new value minus the old.
 			let depthAdjustment: number = movedCollection.Depth - oldCollectionDepth;
 
-			// NOTE: DO NOT CHANGE THIS LOGIC THIS WORKS GREAT
 			this.ReparentChildItemsOfMovedCollection(movedCollection, depthAdjustment);
 
 			this.UpsertMainBookmarks(true);
@@ -712,6 +712,11 @@ export class HomeComponent extends BasePageDirective
 	 */
 	private IsChildCollection(targetCollection: BookmarkCollection, activeCollection: BookmarkCollection): boolean
 	{
+		if (targetCollection == null)
+		{
+			return false;
+		}
+
 		if (targetCollection.ParentId === activeCollection.Id)
 		{
 			return true;
