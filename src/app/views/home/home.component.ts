@@ -15,6 +15,7 @@ import { AbstractControl, FormControl, FormGroup, FormGroupDirective, NgForm, Va
 import { ErrorStateMatcher } from '@angular/material/core';
 import { BookmarkImportStateType } from 'src/app/domain/bookmarks/enums/bookmark-import-state-type';
 import { MatMenu } from '@angular/material/menu';
+import * as openpgp from 'openpgp';
 
 /** Error when invalid control is dirty, touched, or submitted. */
 export class MyErrorStateMatcher implements ErrorStateMatcher
@@ -108,8 +109,15 @@ export class HomeComponent extends BasePageDirective
 			.subscribe({
 				next: (result: BookmarkCollection[]) =>
 				{
-					this.BookmarkCollections = [...result];
-					this.ActiveCollection = this.BookmarkCollections[0];
+					if (result != null && result?.length > 0)
+					{
+						this.BookmarkCollections = [...result];
+						this.ActiveCollection = this.BookmarkCollections[0];
+					}
+					else
+					{
+						this.BookmarkImportState = BookmarkImportStateType.NoExistingBookmarks;
+					}
 				},
 				error: (error) =>
 				{
@@ -141,7 +149,7 @@ export class HomeComponent extends BasePageDirective
 		this.AddBookmarkFormGroup.markAsPristine();
 	}
 
-	public UpsertMainBookmarks(showSnackBar: boolean = false): void
+	public async UpsertMainBookmarks(showSnackBar: boolean = false): Promise<void>
 	{
 		try
 		{
@@ -161,7 +169,53 @@ export class HomeComponent extends BasePageDirective
 			return;
 		}
 
-		this._bookmarksService.SyncBookmarks(this.BookmarkCollections)
+		let user = this._authService.GetCurrentUser();
+		let publicKey = await openpgp.readKey({ armoredKey: user.PublicKey });
+		let encryptedCollections: BookmarkCollection[] = [];
+
+		// Encrypt!
+		// Loop through every single collection and encrypt what need encrypting.
+		for (let i = 0; i < this.BookmarkCollections.length; i++)
+		{
+			let collection = this.BookmarkCollections[i];
+			let collectionEncrypted = new BookmarkCollection();
+			collectionEncrypted.Map(collection);
+
+			let encryptedTitle = await openpgp.encrypt({
+				message: await openpgp.createMessage({ text: collection.Title }),
+				encryptionKeys: publicKey
+				// Consider adding signing keys
+			});
+
+			collectionEncrypted.Title = encryptedTitle;
+
+			// Loop through each bookmark and encrypt what needs encrypting.
+			if (collection.Bookmarks?.length > 0)
+			{
+				for (let bi = 0; bi < collection.Bookmarks.length; bi++)
+				{
+					let bookmark = collection.Bookmarks[bi];
+
+					let encryptedBookmarkTitle = await openpgp.encrypt({
+						message: await openpgp.createMessage({ text: bookmark.Title }),
+						encryptionKeys: publicKey
+						// Consider adding signing keys
+					});
+					bookmark.Title = encryptedBookmarkTitle;
+
+					let encryptedBookmarkUrl = await openpgp.encrypt({
+						message: await openpgp.createMessage({ text: bookmark.Url }),
+						encryptionKeys: publicKey
+						// Consider adding signing keys
+					});
+					bookmark.Url = encryptedBookmarkUrl;
+				}
+			}
+
+			encryptedCollections.push(collectionEncrypted);
+		}
+
+		this._bookmarksService.SyncBookmarks(encryptedCollections)
 			.subscribe({
 				next: (result: BookmarkCollection[]) =>
 				{

@@ -4,5 +4,5 @@ export class IdentityActionResponseDto
 
 	public IsSubscriptionValid: boolean = false;
 
-	public OGID: string = "";
+	public MemberAccountID: string = "";
 }

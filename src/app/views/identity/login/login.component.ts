@@ -6,7 +6,6 @@ import { BlockUI, NgBlockUI } from 'ng-block-ui';
 import { UserCredential, sendEmailVerification } from '@angular/fire/auth';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { AuthService } from 'src/app/domain/auth/services/auth.service';
-import { GoogleAuthService } from 'src/app/domain/auth/services/google-auth.service';
 import { ActiveUserDetail } from 'src/app/domain/auth/models/active-user-detail';
 import { IdentityActionResponseDto } from 'src/app/domain/membership/models/identity-action-response-dto';
 import { MembershipAuthService } from 'src/app/domain/membership/services/membership-auth.service';
@@ -29,8 +28,7 @@ export class LoginComponent extends BasePageDirective
 		private _authService: AuthService,
 		private _router: Router,
 		private _metaService: Meta,
-		private _membershipAuthService: MembershipAuthService,
-		private _googleAuthService: GoogleAuthService)
+		private _membershipAuthService: MembershipAuthService)
 	// private _recaptchaV3Service: ReCaptchaV3Service)
 	{
 		super(_route, _titleService);
@@ -96,7 +94,7 @@ export class LoginComponent extends BasePageDirective
 							{
 								let activeUserDetail = new ActiveUserDetail();
 								activeUserDetail.User = res.user;
-								activeUserDetail.OGID = response.OGID;
+								activeUserDetail.MemberAccountID = response.MemberAccountID;
 								activeUserDetail.IsSubscriptionValid = response.IsSubscriptionValid;
 								this.SetUserDataAndRedirect(activeUserDetail);
 								this._blockUI.stop();

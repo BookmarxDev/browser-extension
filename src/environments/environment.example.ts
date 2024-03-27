@@ -11,6 +11,7 @@
 export const environment = {
 	production: false,
 	environment: "development",
+	defaultCostFactor: 10,
 	apiUrlV1: "https://localhost:44330/v1",
 	firebaseConfig: {
 		apiKey: "YourApiKeyHere",
@@ -21,7 +22,6 @@ export const environment = {
 		appId: "YourAppIdHere",
 		measurementId: "YourMeasurementIdHere"
 	},
-	reCAPTCHASiteKey: "YourRecaptchaSiteKeyHere",
 	memStorageKey: "__bookmarxapp_storage__"
 };
 
