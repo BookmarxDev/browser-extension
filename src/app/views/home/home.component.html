@@ -45,6 +45,10 @@
 					(click)="sidenav.toggle()">Toggle</button></p>
 	</mat-sidenav>
 	<mat-sidenav-content>
+		<mat-progress-bar color="accent"
+						  mode="indeterminate"
+						  class="file-explorer__progress"
+						  *ngIf="ShowProgressBar"></mat-progress-bar>
 		<div class="bx-d-flex">
 			<div class="file-explorer__wrapper"
 				 [style.width.px]="FileExplorerWidthPX">

@@ -92,6 +92,8 @@ export class HomeComponent extends BasePageDirective
 		return this.AddBookmarkFormGroup.get('bookmarkUrl');
 	}
 
+	public ShowProgressBar: boolean = false;
+
 	public override ngOnInit(): void
 	{
 		super.ngOnInit();
@@ -101,18 +103,22 @@ export class HomeComponent extends BasePageDirective
 			bookmarkUrl: new FormControl('', [Validators.required])
 		});
 
+		this.ShowProgressBar = true;
 		this._bookmarksService.GetAll()
 			.subscribe({
 				next: (result: BookmarkCollection[]) =>
 				{
 					this.BookmarkCollections = [...result];
 					this.ActiveCollection = this.BookmarkCollections[0];
-					this._cdr.detectChanges();
-					console.log(this.BookmarkCollections);
 				},
 				error: (error) =>
 				{
 					console.log(error);
+				},
+				complete: () =>
+				{
+					this.ShowProgressBar = false;
+					this._cdr.detectChanges();
 				}
 			});
 	}
@@ -318,6 +324,7 @@ export class HomeComponent extends BasePageDirective
 	 */
 	public HandleDrop(viewModelCollection: CdkDragDrop<BookmarkCollection[]>)
 	{
+		this.ShowProgressBar = true;
 		this.BodyElement.classList.remove('inheritCursors');
 		this.BodyElement.style.cursor = 'unset';
 
@@ -407,6 +414,8 @@ export class HomeComponent extends BasePageDirective
 		{
 			this.ShowFinishImportingBookmarksWarning();
 		}
+
+		this.ShowProgressBar = false;
 	}
 
 	private ReparentChildItemsOfMovedCollection(movedCollection: BookmarkCollection, depthAdjustment: number): void
