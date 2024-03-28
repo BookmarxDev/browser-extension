@@ -9,7 +9,7 @@ import { CdkDragDrop, moveItemInArray, CdkDragStart } from '@angular/cdk/drag-dr
 import { BookmarkCollection } from 'src/app/domain/bookmarks/entities/bookmark-collection';
 import * as uuid from 'uuid';
 import { Bookmark } from 'src/app/domain/bookmarks/entities/bookmark';
-import { BlockUIService } from 'ng-block-ui';
+import { BlockUI, NgBlockUI } from 'ng-block-ui';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AbstractControl, FormControl, FormGroup, FormGroupDirective, NgForm, Validators } from '@angular/forms';
 import { ErrorStateMatcher } from '@angular/material/core';
@@ -41,12 +41,14 @@ export class HomeComponent extends BasePageDirective
 
 	private isDraggingSide: boolean = false;
 
+	@BlockUI()
+	private _blockUI: NgBlockUI;
+
 	constructor(
 		private _route: ActivatedRoute,
 		private _titleService: Title,
 		private _authService: AuthService,
 		private _bookmarksService: BookmarksService,
-		private _blockUI: BlockUIService,
 		private _cdr: ChangeDetectorRef,
 		private _sanitizer: DomSanitizer,
 		private _snackBar: MatSnackBar)
@@ -106,6 +108,7 @@ export class HomeComponent extends BasePageDirective
 		});
 
 		this.ShowProgressBar = true;
+		this._blockUI.start();
 		this._bookmarksService.GetAll()
 			.subscribe({
 				next: async (result: GetAllBookmarksResponse) =>
@@ -131,9 +134,9 @@ export class HomeComponent extends BasePageDirective
 								armoredMessage: collection.Title // Parse armored message
 							});
 
-							let { data: decryptedTitle, signatures } = await openpgp.decrypt({
+							// Consider signing with pub key
+							let { data: decryptedTitle } = await openpgp.decrypt({
 								message: collectionTitleArmored,
-								// Consider signing with pub key
 								decryptionKeys: privateKey
 							});
 
@@ -146,6 +149,42 @@ export class HomeComponent extends BasePageDirective
 							// } catch (e) {
 							//     throw new Error('Signature could not be verified: ' + e.message);
 							// }
+
+							// Decrypt bookmarks
+							if (mappedCollection.Bookmarks?.length > 0)
+							{
+								for (let bi = 0; bi < mappedCollection.Bookmarks.length; bi++)
+								{
+									let bookmark = mappedCollection.Bookmarks[bi];
+
+									// Bookmark Title
+									let bookmarkTitleArmored = await openpgp.readMessage({
+										armoredMessage: bookmark.Title // Parse armored message
+									});
+
+									// Consider signing with pub key
+									let { data: decryptedBookmarkTitle } = await openpgp.decrypt({
+										message: bookmarkTitleArmored,
+
+										decryptionKeys: privateKey
+									});
+
+									bookmark.Title = decryptedBookmarkTitle;
+
+									// Bookmark URL
+									let bookmarkUrlArmored = await openpgp.readMessage({
+										armoredMessage: bookmark.Url // Parse armored message
+									});
+
+									// Consider signing with pub key
+									let { data: decryptedBookmarkUrl } = await openpgp.decrypt({
+										message: bookmarkUrlArmored,
+										decryptionKeys: privateKey
+									});
+
+									bookmark.Url = decryptedBookmarkUrl;
+								}
+							}
 
 							decryptedCollections.push(mappedCollection);
 						}
@@ -164,8 +203,9 @@ export class HomeComponent extends BasePageDirective
 				},
 				complete: () =>
 				{
-					this.ShowProgressBar = false;
 					this._cdr.detectChanges();
+					this.ShowProgressBar = false;
+					this._blockUI.stop();
 				}
 			});
 	}
