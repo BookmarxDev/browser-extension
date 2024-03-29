@@ -73,3 +73,6 @@ root of the `Extension` project that contains more information and the configura
 ### OpenPGP
 - https://github.com/openpgpjs
 - https://www.npmjs.com/package/openpgp
+
+### Sentryio
+- https://sentry.io/welcome/

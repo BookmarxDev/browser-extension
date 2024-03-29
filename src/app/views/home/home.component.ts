@@ -702,7 +702,7 @@ export class HomeComponent extends BasePageDirective
 	 * But still...yuck.
 	 * @param deletedCollection 
 	 */
-	public MarkCollectionsForDeletion(deletedCollection: BookmarkCollection): void
+	public MarkCollectionsForDeletion(deletedCollection: any): void
 	{
 		if (deletedCollection != null && deletedCollection.IsSoftDeleted)
 		{

@@ -38,6 +38,7 @@ import { DialogDeleteCollectionComponent } from './views/dialogs/dialog-delete-c
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MarkdownModule } from 'ngx-markdown';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { DialogCreateCollectionComponent } from './views/dialogs/dialog-create-collection/dialog-create-collection.component';
 
 @NgModule({
 	declarations: [
@@ -51,7 +52,8 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 		ActionComponent,
 		BookmarkTreeComponent,
 		DirectoryMenuComponent,
-		DialogDeleteCollectionComponent
+		DialogDeleteCollectionComponent,
+		DialogCreateCollectionComponent
 	],
 	imports: [
 		BrowserModule,

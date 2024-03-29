@@ -1,7 +1,19 @@
 import { Bookmark } from "./bookmark";
+import * as uuid from "uuid";
 
 export class BookmarkCollection
 {
+	constructor(depth?: number, parentId?: string)
+	{
+		if (depth != null && parentId != null)
+		{
+			this.Id = uuid.v4();
+			this.DateTimeAddedUTC = new Date().toUTCString();
+			this.Depth = depth;
+			this.ParentId = parentId;
+		}
+	}
+
 	public Bookmarks: Bookmark[] = [];
 
 	/**
