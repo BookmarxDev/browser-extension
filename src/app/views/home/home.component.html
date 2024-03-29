@@ -125,7 +125,7 @@
 									<span class="collections__bookmark-count">{{collection.Bookmarks?.length}}</span>
 								</div>
 								<app-directory-menu [RespectiveBookmarkCollection]="collection"
-													(CollectionUpdated)="MarkCollectionsForDeletion($event)"></app-directory-menu>
+													(CollectionUpdated)="HandleDirectoryMenuAction($event)"></app-directory-menu>
 							</div>
 						</div>
 					</mat-list-item>

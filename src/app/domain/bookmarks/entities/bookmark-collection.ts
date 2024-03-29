@@ -3,14 +3,15 @@ import * as uuid from "uuid";
 
 export class BookmarkCollection
 {
-	constructor(depth?: number, parentId?: string)
+	constructor(depth?: number, parentId?: string, title?: string)
 	{
 		if (depth != null && parentId != null)
 		{
 			this.Id = uuid.v4();
-			this.DateTimeAddedUTC = new Date().toUTCString();
+			this.DateTimeAddedUTC = new Date().toISOString();
 			this.Depth = depth;
 			this.ParentId = parentId;
+			this.Title = title;
 		}
 	}
 

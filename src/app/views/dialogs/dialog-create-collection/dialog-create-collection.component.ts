@@ -39,9 +39,12 @@ export class DialogCreateCollectionComponent implements OnInit
 	{
 		if (this.CreateCollectionForm.valid)
 		{
-			let collection = new BookmarkCollection(this.BookmarkCollection.Depth + 1, this.BookmarkCollection.Id);
-			console.log(collection);
-			this.dialogRef.close(this.BookmarkCollection);
+			let collection = new BookmarkCollection(
+				this.BookmarkCollection.Depth + 1,
+				this.BookmarkCollection.Id,
+				this.CollectionTitle.value);
+				
+			this.dialogRef.close(collection);
 		}
 		else
 		{

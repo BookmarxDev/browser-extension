@@ -17,6 +17,8 @@ import { BookmarkImportStateType } from 'src/app/domain/bookmarks/enums/bookmark
 import { MatMenu } from '@angular/material/menu';
 import * as openpgp from 'openpgp';
 import { GetAllBookmarksResponse } from 'src/app/domain/bookmarks/models/get-all-bookmarks-response';
+import { DirectoryMenuAction } from 'src/app/domain/bookmarks/models/directory-menu-action';
+import { DirectoryMenuChangeType } from 'src/app/domain/bookmarks/enums/directory-menu-change-type';
 
 /** Error when invalid control is dirty, touched, or submitted. */
 export class MyErrorStateMatcher implements ErrorStateMatcher
@@ -230,6 +232,8 @@ export class HomeComponent extends BasePageDirective
 
 	public async UpsertMainBookmarks(showSnackBar: boolean = false): Promise<void>
 	{
+		this._blockUI.start();
+
 		try
 		{
 			// Add the pending import collections to the main collections.
@@ -309,6 +313,10 @@ export class HomeComponent extends BasePageDirective
 				error: (error) =>
 				{
 					console.log(error);
+				},
+				complete: () =>
+				{
+					this._blockUI.stop();
 				}
 			});
 	}
@@ -687,7 +695,6 @@ export class HomeComponent extends BasePageDirective
 				}
 
 				this.BookmarkCollectionsPendingImport = [...collections];
-				console.log(this.BookmarkCollectionsPendingImport);
 				this._cdr.detectChanges();
 			}
 		});
@@ -702,80 +709,111 @@ export class HomeComponent extends BasePageDirective
 	 * But still...yuck.
 	 * @param deletedCollection 
 	 */
-	public MarkCollectionsForDeletion(deletedCollection: any): void
+	public HandleDirectoryMenuAction(changeAction: DirectoryMenuAction): void
 	{
-		if (deletedCollection != null && deletedCollection.IsSoftDeleted)
+		let original = changeAction.OriginalBookmarkCollection;
+		let added = changeAction.NewBookmarkCollection;
+
+		if (changeAction.ChangeType == DirectoryMenuChangeType.Add)
 		{
-			let deletedCollections = [];
-
-			let childCollections = this.GetChildCollections(deletedCollection.Id);
-
-			childCollections.forEach((collection) =>
+			for (let i = 0; i < this.BookmarkCollections.length; i++)
 			{
-				collection.IsSoftDeleted = true;
-			});
-
-			deletedCollections = [deletedCollection, ...childCollections];
-
-			// We'll loop over the deleted collections, first.
-			for (let i = 0; i < deletedCollections.length; i++)
-			{
-				let currentDeletedCollection: BookmarkCollection = deletedCollections[i];
-
-				// Next, find the corresponding item in the main collections list.
-				for (let mi = 0; mi < this.BookmarkCollections.length; mi++)
+				if (this.BookmarkCollections[i].Id === original.Id)
 				{
-					let currentMainCollection = this.BookmarkCollections[mi];
-					if (currentDeletedCollection.Id === currentMainCollection.Id)
-					{
-						// Update it to show deleted then immediately bail to go on to the next and reduce iterations.
-						currentMainCollection.IsSoftDeleted = true;
-					}
+					// i + 1 as we want it to be a child element, now.
+					this.BookmarkCollections.splice(i + 1, 0, added);
+					break;
 				}
 			}
-
-			// Finally, we're going to completely reconstruct the existing collections
-			// and also build up a new deleted collections list. Then, when we get those
-			// created we'll rewrite both the BookmarkCollections and DeletedBookmarkCollections
-			// arrays with the new arrays. This is better than actively deleting elements
-			// at specified array positions, since we'll be modifying the array we're working on.
-			let collectionsToKeep = [];
-			let collectionsToDelete = [];
-			for (let index = 0; index < this.BookmarkCollections.length; index++)
-			{
-				let currentCollection = this.BookmarkCollections[index];
-
-				if (currentCollection.IsSoftDeleted)
-				{
-					// The root folder which was just deleted should be reparented to root.
-					if (currentCollection.Id == deletedCollection.Id)
-					{
-						currentCollection.ParentId = null;
-						currentCollection.Depth = 0;
-					}
-
-					collectionsToDelete.push(currentCollection);
-				}
-				else
-				{
-					collectionsToKeep.push(currentCollection);
-				}
-			}
-
-			// Overwrite the existing bookmark collections.
-			this.BookmarkCollections = [...collectionsToKeep];
-			collectionsToDelete.forEach((deletedCollection) =>
-			{
-				this.BookmarkCollectionsDeleted.push(deletedCollection);
-			});
-
-			this._cdr.detectChanges();
-
-			this.UpsertMainBookmarks();
-
-			// TODO: Circle back.
-			//this.UpsertDeletedBookmarks(true);
 		}
+		else if (changeAction.ChangeType == DirectoryMenuChangeType.Remove)
+		{
+			if (original != null && original.IsSoftDeleted)
+			{
+				let childCollections = this.GetChildCollections(original.Id);
+
+				// To keep it simple, just hard delete from the array.
+				for (let i = 0; i < this.BookmarkCollections.length; i++)
+				{
+					if (this.BookmarkCollections[i].Id === original.Id)
+					{
+						// Nuke that root element and all child elements.
+						let deleteCount = childCollections?.length == 0 ? 1 : childCollections.length;
+						this.BookmarkCollections.splice(i, deleteCount);
+					}
+				}
+
+				// TODO: Circle back.
+				// let deletedCollections = [];
+				// childCollections.forEach((collection) =>
+				// {
+				// 	collection.IsSoftDeleted = true;
+				// });
+
+				// deletedCollections = [original, ...childCollections];
+
+				// // We'll loop over the deleted collections, first.
+				// for (let i = 0; i < deletedCollections.length; i++)
+				// {
+				// 	let currentDeletedCollection: BookmarkCollection = deletedCollections[i];
+
+				// 	// Next, find the corresponding item in the main collections list.
+				// 	for (let mi = 0; mi < this.BookmarkCollections.length; mi++)
+				// 	{
+				// 		let currentMainCollection = this.BookmarkCollections[mi];
+				// 		if (currentDeletedCollection.Id === currentMainCollection.Id)
+				// 		{
+				// 			// Update it to show deleted then immediately bail to go on to the next and reduce iterations.
+				// 			currentMainCollection.IsSoftDeleted = true;
+				// 		}
+				// 	}
+				// }
+
+				// // Finally, we're going to completely reconstruct the existing collections
+				// // and also build up a new deleted collections list. Then, when we get those
+				// // created we'll rewrite both the BookmarkCollections and DeletedBookmarkCollections
+				// // arrays with the new arrays. This is better than actively deleting elements
+				// // at specified array positions, since we'll be modifying the array we're working on.
+				// let collectionsToKeep = [];
+				// let collectionsToDelete = [];
+				// for (let index = 0; index < this.BookmarkCollections.length; index++)
+				// {
+				// 	let currentCollection = this.BookmarkCollections[index];
+
+				// 	if (currentCollection.IsSoftDeleted)
+				// 	{
+				// 		// The root folder which was just deleted should be reparented to root.
+				// 		if (currentCollection.Id == original.Id)
+				// 		{
+				// 			currentCollection.ParentId = null;
+				// 			currentCollection.Depth = 0;
+				// 		}
+
+				// 		collectionsToDelete.push(currentCollection);
+				// 	}
+				// 	else
+				// 	{
+				// 		collectionsToKeep.push(currentCollection);
+				// 	}
+				// }
+
+				// // Overwrite the existing bookmark collections.
+				// this.BookmarkCollections = [...collectionsToKeep];
+				// collectionsToDelete.forEach((deletedCollection) =>
+				// {
+				// 	this.BookmarkCollectionsDeleted.push(deletedCollection);
+				// });
+
+				//this.UpsertDeletedBookmarks(true);
+			}
+		}
+		else if (changeAction.ChangeType == DirectoryMenuChangeType.Rename)
+		{
+
+		}
+
+		this._cdr.detectChanges();
+		this.UpsertMainBookmarks(true);
 	}
 
 	//#region Private Methods
