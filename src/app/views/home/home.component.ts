@@ -330,7 +330,7 @@ export class HomeComponent extends BasePageDirective
 
 	public AddNewRootFolder(): void
 	{
-		let rootCollection = new BookmarkCollection(-1, null, '');
+		let rootCollection = new BookmarkCollection(-1, '', null);
 		const dialogRef = this._dialog.open(DialogCreateCollectionComponent, {
 			width: '300px',
 			data: rootCollection

@@ -215,10 +215,6 @@ export class SignupComponent extends BasePageDirective
 
 		memberAccountCreateRequest.PasswordProtectedPrivateKey = privateKey;
 		memberAccountCreateRequest.PublicKey = publicKey;
-		console.log(hash);
-		console.log(privateKey);     // '-----BEGIN PGP PRIVATE KEY BLOCK ... '
-		console.log(publicKey);      // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
-		console.log(revocationCertificate); // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
 	}
 
 	//#endregion Private Methods

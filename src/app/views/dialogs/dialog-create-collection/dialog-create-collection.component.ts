@@ -41,9 +41,9 @@ export class DialogCreateCollectionComponent implements OnInit
 		{
 			let collection = new BookmarkCollection(
 				this.BookmarkCollection.Depth + 1,
-				this.BookmarkCollection.Id,
-				this.CollectionTitle.value);
-				
+				this.CollectionTitle.value,
+				this.BookmarkCollection.Id);
+
 			this.dialogRef.close(collection);
 		}
 		else

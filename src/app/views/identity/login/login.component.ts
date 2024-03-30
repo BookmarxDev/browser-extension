@@ -10,6 +10,7 @@ import { ActiveUserDetail } from 'src/app/domain/auth/models/active-user-detail'
 import { IdentityActionResponseDto } from 'src/app/domain/membership/models/identity-action-response-dto';
 import { MembershipAuthService } from 'src/app/domain/membership/services/membership-auth.service';
 import { ParticlesConfig } from '../../shared/config/particles-config';
+import * as bcrypt from 'bcryptjs';
 declare let particlesJS: any;
 
 @Component({
@@ -96,6 +97,11 @@ export class LoginComponent extends BasePageDirective
 								activeUserDetail.User = res.user;
 								activeUserDetail.MemberAccountID = response.MemberAccountID;
 								activeUserDetail.IsSubscriptionValid = response.IsSubscriptionValid;
+								activeUserDetail.PublicKey = response.PublicKey;
+
+								var hash = bcrypt.hashSync(this.SignInPassword?.value, response.UserSalt);
+								activeUserDetail.UserHash = hash;
+
 								this.SetUserDataAndRedirect(activeUserDetail);
 								this._blockUI.stop();
 							});

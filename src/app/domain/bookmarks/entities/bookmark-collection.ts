@@ -3,9 +3,9 @@ import * as uuid from "uuid";
 
 export class BookmarkCollection
 {
-	constructor(depth?: number, parentId?: string, title?: string)
+	constructor(depth?: number, title?: string, parentId?: string)
 	{
-		if (depth != null && parentId != null)
+		if (depth != null && title != null)
 		{
 			this.Id = uuid.v4();
 			this.DateTimeAddedUTC = new Date().toISOString();
