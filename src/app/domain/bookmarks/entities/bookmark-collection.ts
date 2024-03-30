@@ -15,7 +15,9 @@ export class BookmarkCollection
 		}
 	}
 
-	public Bookmarks: Bookmark[] = [];
+	public BookmarksDecrypted: Bookmark[] = [];
+
+	public BookmarksEncryptedJSON: string;
 
 	/**
 	 * This determines if its child collections are collapsed.
@@ -83,9 +85,12 @@ export class BookmarkCollection
 
 	public Title: string = "N/A";
 
+	public TotalBookmarks: number = 0;
+
 	public Map(collection: BookmarkCollection): void
 	{
-		this.Bookmarks = collection.Bookmarks;
+		this.BookmarksDecrypted = collection.BookmarksDecrypted;
+		this.BookmarksEncryptedJSON = collection.BookmarksEncryptedJSON;
 		this.ChildCollectionsCollapsed = collection.ChildCollectionsCollapsed;
 		this.DateTimeAddedUTC = collection.DateTimeAddedUTC;
 		this.Depth = collection.Depth;
@@ -98,5 +103,6 @@ export class BookmarkCollection
 		this.IsSoftDeleted = collection.IsSoftDeleted;
 		this.ParentId = collection.ParentId;
 		this.Title = collection.Title;
+		this.TotalBookmarks = collection.TotalBookmarks;
 	}
 }

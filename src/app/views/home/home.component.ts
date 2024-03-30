@@ -121,10 +121,14 @@ export class HomeComponent extends BasePageDirective
 						let decryptedCollections: BookmarkCollection[] = [];
 
 						let user = this._authService.GetCurrentUser();
+						user.EncryptedPrivateKey = result.EncryptedPrivateKey;
+
 						const privateKey = await openpgp.decryptKey({
 							privateKey: await openpgp.readPrivateKey({ armoredKey: result.EncryptedPrivateKey }),
 							passphrase: user.UserHash
 						});
+
+						this._authService.SetUserData(user);
 
 						for (let i = 0; i < result.BookmarkCollections.length; i++)
 						{
@@ -152,47 +156,12 @@ export class HomeComponent extends BasePageDirective
 							//     throw new Error('Signature could not be verified: ' + e.message);
 							// }
 
-							// Decrypt bookmarks
-							if (mappedCollection.Bookmarks?.length > 0)
-							{
-								for (let bi = 0; bi < mappedCollection.Bookmarks.length; bi++)
-								{
-									let bookmark = mappedCollection.Bookmarks[bi];
-
-									// Bookmark Title
-									let bookmarkTitleArmored = await openpgp.readMessage({
-										armoredMessage: bookmark.Title // Parse armored message
-									});
-
-									// Consider signing with pub key
-									let { data: decryptedBookmarkTitle } = await openpgp.decrypt({
-										message: bookmarkTitleArmored,
-
-										decryptionKeys: privateKey
-									});
-
-									bookmark.Title = decryptedBookmarkTitle;
-
-									// Bookmark URL
-									let bookmarkUrlArmored = await openpgp.readMessage({
-										armoredMessage: bookmark.Url // Parse armored message
-									});
-
-									// Consider signing with pub key
-									let { data: decryptedBookmarkUrl } = await openpgp.decrypt({
-										message: bookmarkUrlArmored,
-										decryptionKeys: privateKey
-									});
-
-									bookmark.Url = decryptedBookmarkUrl;
-								}
-							}
-
 							decryptedCollections.push(mappedCollection);
 						}
 
 						this.BookmarkCollections = [...decryptedCollections];
-						this.ActiveCollection = this.BookmarkCollections[0];
+						//this.ActiveCollection = this.BookmarkCollections[0];
+						this.OpenBookmarkCollection(null, this.BookmarkCollections[0]);
 					}
 					else
 					{
@@ -222,7 +191,7 @@ export class HomeComponent extends BasePageDirective
 		// Because this is a reference type, any changes made to the reference
 		// have an effect on the original instance, so this update also modifies
 		// the main bookmark collection value. Neat.
-		this.ActiveCollection.Bookmarks.push(newBookmark);
+		this.ActiveCollection.BookmarksDecrypted.push(newBookmark);
 
 		this.UpsertMainBookmarks(true);
 
@@ -257,7 +226,7 @@ export class HomeComponent extends BasePageDirective
 		let encryptedCollections: BookmarkCollection[] = [];
 
 		// Encrypt!
-		// Loop through every single collection and encrypt what need encrypting.
+		// Loop through every single collection and encrypt what needs encrypting.
 		for (let i = 0; i < this.BookmarkCollections.length; i++)
 		{
 			let collection = this.BookmarkCollections[i];
@@ -272,28 +241,41 @@ export class HomeComponent extends BasePageDirective
 
 			collectionEncrypted.Title = encryptedTitle;
 
-			// Loop through each bookmark and encrypt what needs encrypting.
-			if (collection.Bookmarks?.length > 0)
-			{
-				for (let bi = 0; bi < collection.Bookmarks.length; bi++)
-				{
-					let bookmark = collection.Bookmarks[bi];
+			let encryptedBookmarksJson = await openpgp.encrypt({
+				message: await openpgp.createMessage({ text: JSON.stringify(collection.BookmarksDecrypted) }),
+				encryptionKeys: publicKey
+				// Consider adding signing keys
+			});
 
-					let encryptedBookmarkTitle = await openpgp.encrypt({
-						message: await openpgp.createMessage({ text: bookmark.Title }),
-						encryptionKeys: publicKey
-						// Consider adding signing keys
-					});
-					bookmark.Title = encryptedBookmarkTitle;
+			collectionEncrypted.BookmarksEncryptedJSON = encryptedBookmarksJson;
 
-					let encryptedBookmarkUrl = await openpgp.encrypt({
-						message: await openpgp.createMessage({ text: bookmark.Url }),
-						encryptionKeys: publicKey
-						// Consider adding signing keys
-					});
-					bookmark.Url = encryptedBookmarkUrl;
-				}
-			}
+			// This is very process intensive. And honestly we have no need to
+			// see metadata about the bookmarks themselves. We only really need
+			// metadata around the collections themselves. So, let's encrypt the
+			// entire array of bookmarks all at once. Similar, conceptually, to
+			// encrypting the entire byte array of an image file, or any file.
+			// // Loop through each bookmark and encrypt what needs encrypting.
+			// if (collection.Bookmarks?.length > 0)
+			// {
+			// 	for (let bi = 0; bi < collection.Bookmarks.length; bi++)
+			// 	{
+			// 		let bookmark = collection.Bookmarks[bi];
+
+			// 		let encryptedBookmarkTitle = await openpgp.encrypt({
+			// 			message: await openpgp.createMessage({ text: bookmark.Title }),
+			// 			encryptionKeys: publicKey
+			// 			// Consider adding signing keys
+			// 		});
+			// 		bookmark.Title = encryptedBookmarkTitle;
+
+			// 		let encryptedBookmarkUrl = await openpgp.encrypt({
+			// 			message: await openpgp.createMessage({ text: bookmark.Url }),
+			// 			encryptionKeys: publicKey
+			// 			// Consider adding signing keys
+			// 		});
+			// 		bookmark.Url = encryptedBookmarkUrl;
+			// 	}
+			// }
 
 			encryptedCollections.push(collectionEncrypted);
 		}
@@ -412,10 +394,12 @@ export class HomeComponent extends BasePageDirective
 
 	public OpenBookmarkCollection($event: Event, collection: BookmarkCollection): void
 	{
-		$event.preventDefault();
+		$event?.preventDefault();
 		if (this.BookmarkImportState == BookmarkImportStateType.None)
 		{
-			this.singleClickTimer = setTimeout(() =>
+			this.ShowProgressBar = true;
+
+			this.singleClickTimer = setTimeout(async () =>
 			{
 				if (this.IsDragging)
 				{
@@ -423,8 +407,52 @@ export class HomeComponent extends BasePageDirective
 					return;
 				}
 
-				this.ActiveCollection = collection;
-				this._cdr.detectChanges();
+				if (collection.BookmarksDecrypted?.length > 0)
+				{
+					// The bookmarks were already decrypted, let's not do it again :/
+					this.ActiveCollection = collection;
+				}
+				else if (collection.BookmarksEncryptedJSON != "")
+				{
+					// Decrypt the JSON blob of bookmarks and then map and set them into the array for viewing.
+					let user = this._authService.GetCurrentUser();
+
+					const privateKey = await openpgp.decryptKey({
+						privateKey: await openpgp.readPrivateKey({ armoredKey: user.EncryptedPrivateKey }),
+						passphrase: user.UserHash
+					});
+
+					let bookmarksArmored = await openpgp.readMessage({
+						armoredMessage: collection.BookmarksEncryptedJSON // Parse armored message
+					});
+
+					// Consider signing with pub key
+					let { data: decryptedBookmarks } = await openpgp.decrypt({
+						message: bookmarksArmored,
+						decryptionKeys: privateKey
+					});
+
+					let bookmarksRaw = JSON.parse(decryptedBookmarks) as Bookmark[];
+
+					if (bookmarksRaw != null && typeof (bookmarksRaw) != "undefined")
+					{
+						// Start to map
+						let decryptedBookmarks = [];
+
+						for (let i = 0; i < bookmarksRaw.length; i++)
+						{
+							let bookmark = new Bookmark();
+							bookmark.Map(bookmarksRaw[i]);
+							decryptedBookmarks.push(bookmark);
+						}
+
+						collection.BookmarksDecrypted = decryptedBookmarks;
+					}
+
+					this.ActiveCollection = collection;
+					this._cdr.detectChanges();
+					this.ShowProgressBar = false;
+				}
 			}, 250);
 		}
 		else
@@ -856,7 +884,7 @@ export class HomeComponent extends BasePageDirective
 				{
 					// If the URL has a value it's a bookmark so add it.
 					let bookmark = new Bookmark(child.title, child.url, bookmarkCollection.Id);
-					bookmarkCollection.Bookmarks.push(bookmark);
+					bookmarkCollection.BookmarksDecrypted.push(bookmark);
 					return;
 				}
 				else if (child.children)

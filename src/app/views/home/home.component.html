@@ -122,7 +122,7 @@
 							</div>
 							<div class="bx-d-flex bx-justify-content-evenly bx-align-items-center">
 								<div>
-									<span class="collections__bookmark-count">{{collection.Bookmarks?.length}}</span>
+									<span class="collections__bookmark-count">{{collection.TotalBookmarks}}</span>
 								</div>
 								<app-directory-menu [RespectiveBookmarkCollection]="collection"
 													(CollectionUpdated)="HandleDirectoryMenuAction($event)"></app-directory-menu>
@@ -148,7 +148,7 @@
 								</p>
 							</div>
 							<div>
-								<span class="collections__bookmark-count">{{pendingCollection.Bookmarks?.length}}</span>
+								<span class="collections__bookmark-count">{{pendingCollection.BookmarksDecrypted?.length}}</span>
 							</div>
 						</div>
 					</mat-list-item>
@@ -215,17 +215,17 @@
 					<div class="bx-h-100">
 						<div class="bookmarks__header bx-d-flex bx-justify-content-between">
 							<p>{{ActiveCollection?.Title}}</p>
-							<span>{{ActiveCollection?.Bookmarks?.length}}</span>
+							<span>{{ActiveCollection?.BookmarksDecrypted?.length}}</span>
 						</div>
 						<hr />
-						<div *ngFor="let bookmark of ActiveCollection?.Bookmarks">
+						<div *ngFor="let bookmark of ActiveCollection?.BookmarksDecrypted">
 							<a [href]="SanitizeUrl(bookmark.Url)"
 							   target="_blank">
 								{{bookmark.Title}}
 							</a>
 							<mat-divider></mat-divider>
 						</div>
-						<ng-container *ngIf="ActiveCollection?.Bookmarks?.length == 0">
+						<ng-container *ngIf="ActiveCollection?.BookmarksDecrypted?.length == 0">
 							<div class="bx-w-100 bx-h-100 bx-d-flex bx-align-items-center bx-justify-content-center">
 								<p>0 saved bookmarks.</p>
 							</div>
