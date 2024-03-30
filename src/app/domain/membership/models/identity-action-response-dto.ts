@@ -4,5 +4,11 @@ export class IdentityActionResponseDto
 
 	public IsSubscriptionValid: boolean = false;
 
-	public OGID: string = "";
+	public MemberAccountID: string = "";
+
+	public PublicKey: string = "";
+
+	public SaltCostFactor: string = "";
+
+	public UserSalt: string = "";
 }

@@ -1,8 +1,23 @@
 import { Bookmark } from "./bookmark";
+import * as uuid from "uuid";
 
 export class BookmarkCollection
 {
-	public Bookmarks: Bookmark[] = [];
+	constructor(depth?: number, title?: string, parentId?: string)
+	{
+		if (depth != null && title != null)
+		{
+			this.Id = uuid.v4();
+			this.DateTimeAddedUTC = new Date().toISOString();
+			this.Depth = depth;
+			this.ParentId = parentId;
+			this.Title = title;
+		}
+	}
+
+	public BookmarksDecrypted: Bookmark[] = [];
+
+	public BookmarksEncryptedJSON: string;
 
 	/**
 	 * This determines if its child collections are collapsed.
@@ -69,4 +84,24 @@ export class BookmarkCollection
 	public ParentId: string;
 
 	public Title: string = "N/A";
+
+	public TotalBookmarks: number = 0;
+
+	public Map(collection: BookmarkCollection): void
+	{
+		this.BookmarksEncryptedJSON = collection.BookmarksEncryptedJSON;
+		this.ChildCollectionsCollapsed = collection.ChildCollectionsCollapsed;
+		this.DateTimeAddedUTC = collection.DateTimeAddedUTC;
+		this.Depth = collection.Depth;
+		this.HasChildren = collection.HasChildren;
+		this.Icon = collection.Icon;
+		this.Id = collection.Id;
+		this.Index = collection.Index;
+		this.IsCollapsed = collection.IsCollapsed;
+		this.IsLastChild = collection.IsLastChild;
+		this.IsSoftDeleted = collection.IsSoftDeleted;
+		this.ParentId = collection.ParentId;
+		this.Title = collection.Title;
+		this.TotalBookmarks = collection.TotalBookmarks;
+	}
 }

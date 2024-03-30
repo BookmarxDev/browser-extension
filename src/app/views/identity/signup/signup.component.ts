@@ -6,12 +6,15 @@ import { FormGroup, FormControl, Validators } from '@angular/forms';
 import { BlockUI, NgBlockUI } from 'ng-block-ui';
 import { ActiveUserDetail } from 'src/app/domain/auth/models/active-user-detail';
 import { AuthService } from 'src/app/domain/auth/services/auth.service';
-import { GoogleAuthService } from 'src/app/domain/auth/services/google-auth.service';
 import { UserCredential, sendEmailVerification } from '@angular/fire/auth';
 import { MemberAccountCreateRequest } from 'src/app/domain/membership/models/member-account-create-request';
 import { MembershipAuthService } from 'src/app/domain/membership/services/membership-auth.service';
 import { IdentityActionResponseDto } from 'src/app/domain/membership/models/identity-action-response-dto';
 import { ParticlesConfig } from '../../shared/config/particles-config';
+import * as openpgp from 'openpgp';
+import * as bcrypt from 'bcryptjs';
+import { environment } from 'src/environments/environment';
+
 declare let particlesJS: any;
 
 @Component({
@@ -30,7 +33,6 @@ export class SignupComponent extends BasePageDirective
 		private _titleService: Title,
 		private _authService: AuthService,
 		private _router: Router,
-		private _googleAuthService: GoogleAuthService,
 		private _membershipAuthService: MembershipAuthService)
 	{
 		super(_route, _titleService);
@@ -76,7 +78,6 @@ export class SignupComponent extends BasePageDirective
 
 		let currentDate = new Date();
 		this.CurrentYear = currentDate.getFullYear().toString();
-		this._ig = this._route.snapshot.paramMap.get('ig');
 	}
 
 	//#endregion OnInit
@@ -115,46 +116,47 @@ export class SignupComponent extends BasePageDirective
 					{
 						if (token != "")
 						{
-							// Execute the reCAPTCHA v3
-							// this._recaptchaSubscription = this._recaptchaV3Service.execute("signup_action")
-							// 	.subscribe({
-							// 		next: (reCAPTCHAToken: string) =>
-							// 		{
+							const fullName = `${ firstName } ${ lastName }`;
+
 							// After signup we don't care that they verify their email, next time they 
 							// log in they'll be asked to verify it. Just make it easy right now.
 							// Need to manually set the data so the auth guard works
 							// Immediately update the users first and last name
 							let memberAccountCreateRequest = new MemberAccountCreateRequest();
 							memberAccountCreateRequest.AccessToken = token;
-							memberAccountCreateRequest.APID = res.user.uid;
+							memberAccountCreateRequest.AuthProviderUID = res.user.uid;
 							memberAccountCreateRequest.EmailAddress = signupEmail;
 							memberAccountCreateRequest.FirstName = firstName;
 							memberAccountCreateRequest.LastName = lastName;
-							// memberAccountCreateRequest.ReCAPTCHAToken = reCAPTCHAToken;
-							memberAccountCreateRequest.IG = this._ig ?? "";
 
-							this._membershipAuthService.CreateNewMemberAccount(memberAccountCreateRequest)
-								.subscribe((response: IdentityActionResponseDto) =>
+							// Generate a new salt
+							const salt = bcrypt.genSaltSync(environment.defaultCostFactor);
+							memberAccountCreateRequest.SaltCostFactor = environment.defaultCostFactor;
+							memberAccountCreateRequest.UserSalt = salt;
+
+							var hash = bcrypt.hashSync(signupPassword, salt);
+
+							this.GenerateKeyPair(hash, fullName, signupEmail, memberAccountCreateRequest)
+								.then(() =>
 								{
-									const fullName = `${ firstName } ${ lastName }`;
-
-									let activeUserDetail = new ActiveUserDetail();
-									activeUserDetail.User = res.user;
-									activeUserDetail.OGID = response.OGID;
-									activeUserDetail.IsSubscriptionValid = response.IsSubscriptionValid;
-
-									this._authService.UpdateDisplayName(activeUserDetail, fullName)
-										.then(() =>
+									this._membershipAuthService.CreateNewMemberAccount(memberAccountCreateRequest)
+										.subscribe((response: IdentityActionResponseDto) =>
 										{
-											this.SetUserDataAndRedirect(activeUserDetail);
+											let activeUserDetail = new ActiveUserDetail();
+											activeUserDetail.User = res.user;
+											activeUserDetail.MemberAccountID = response.MemberAccountID;
+											activeUserDetail.IsSubscriptionValid = response.IsSubscriptionValid;
+											activeUserDetail.UserHash = hash;
+											activeUserDetail.PublicKey = memberAccountCreateRequest.PublicKey;
+
+											this._authService.UpdateDisplayName(activeUserDetail, fullName)
+												.then(() =>
+												{
+													this.SetUserDataAndRedirect(activeUserDetail);
+													this._blockUI.stop();
+												});
 										});
 								});
-							// 				},
-							// 				complete: () =>
-							// 				{
-							// 					this._blockUI.stop();
-							// 				}
-							// 			});
 						}
 					});
 			}).catch((err: any) =>
@@ -194,6 +196,25 @@ export class SignupComponent extends BasePageDirective
 		// Need to manually set the data so the auth guard works
 		this._authService.SetUserData(activeUserDetail);
 		this._router.navigate(['/']);
+	}
+
+	// https://www.npmjs.com/package/openpgp#generate-new-key-pair
+	private async GenerateKeyPair(
+		hash: string,
+		name: string,
+		email: string,
+		memberAccountCreateRequest: MemberAccountCreateRequest): Promise<void>
+	{
+		const { privateKey, publicKey, revocationCertificate } = await openpgp.generateKey({
+			type: 'ecc', // Type of the key, defaults to ECC
+			curve: 'curve25519', // ECC curve name, defaults to curve25519
+			userIDs: [{ name: name, email: email }], // you can pass multiple user IDs
+			passphrase: hash, // protects the private key
+			format: 'armored' // output key format, defaults to 'armored' (other options: 'binary' or 'object')
+		});
+
+		memberAccountCreateRequest.PasswordProtectedPrivateKey = privateKey;
+		memberAccountCreateRequest.PublicKey = publicKey;
 	}
 
 	//#endregion Private Methods

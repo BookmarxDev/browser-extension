@@ -1,6 +1,8 @@
 export class MemberAccountCreateRequest
 {
-	public APID: string;
+	public AccessToken: string;
+
+	public AuthProviderUID: string;
 
 	public EmailAddress: string;
 
@@ -8,9 +10,11 @@ export class MemberAccountCreateRequest
 
 	public LastName: string;
 
-	public AccessToken: string;
+	public PasswordProtectedPrivateKey: string;
 
-	public ReCAPTCHAToken: string;
+	public PublicKey: string;
 
-	public IG: string;
+	public SaltCostFactor: number;
+
+	public UserSalt: string;
 }

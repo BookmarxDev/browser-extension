@@ -1,7 +1,6 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { NotFoundComponent } from './views/not-found/not-found.component';
@@ -16,7 +15,6 @@ import { SignupComponent } from './views/identity/signup/signup.component';
 import { ForgotPasswordComponent } from './views/identity/forgot-password/forgot-password.component';
 import { ActionComponent } from './views/identity/action/action.component';
 import { BlockUIModule } from 'ng-block-ui';
-// import { RECAPTCHA_V3_SITE_KEY, RecaptchaV3Module } from 'ng-recaptcha';
 import { AuthService } from './domain/auth/services/auth.service';
 import { AuthInterceptor } from './domain/auth/interceptors/auth.interceptor';
 import { BookmarkTreeComponent } from './views/partials/bookmark-tree/bookmark-tree.component';
@@ -39,6 +37,8 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { DialogDeleteCollectionComponent } from './views/dialogs/dialog-delete-collection/dialog-delete-collection.component';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MarkdownModule } from 'ngx-markdown';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { DialogCreateCollectionComponent } from './views/dialogs/dialog-create-collection/dialog-create-collection.component';
 
 @NgModule({
 	declarations: [
@@ -52,7 +52,8 @@ import { MarkdownModule } from 'ngx-markdown';
 		ActionComponent,
 		BookmarkTreeComponent,
 		DirectoryMenuComponent,
-		DialogDeleteCollectionComponent
+		DialogDeleteCollectionComponent,
+		DialogCreateCollectionComponent
 	],
 	imports: [
 		BrowserModule,
@@ -79,7 +80,8 @@ import { MarkdownModule } from 'ngx-markdown';
 		MatBottomSheetModule,
 		MatDialogModule,
 		MatSidenavModule,
-		MarkdownModule.forRoot()
+		MarkdownModule.forRoot(),
+		MatProgressBarModule
 	],
 	providers: [
 		AuthService,

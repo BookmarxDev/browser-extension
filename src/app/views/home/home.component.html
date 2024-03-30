@@ -45,11 +45,25 @@
 					(click)="sidenav.toggle()">Toggle</button></p>
 	</mat-sidenav>
 	<mat-sidenav-content>
+		<mat-progress-bar color="accent"
+						  mode="indeterminate"
+						  class="file-explorer__progress"
+						  *ngIf="ShowProgressBar"></mat-progress-bar>
 		<div class="bx-d-flex">
 			<div class="file-explorer__wrapper"
 				 [style.width.px]="FileExplorerWidthPX">
 				<div class="example-button-row">
 					<div class="bx-d-flex bx-justify-content-evenly">
+						<div class="example-button-container">
+							<button mat-icon-button
+									color="accent"
+									aria-label="Add new root collection"
+									title="Add new root collection"
+									class="bx-m-0"
+									(click)="AddNewRootFolder()">
+								<mat-icon>add</mat-icon>
+							</button>
+						</div>
 						<div class="example-button-container">
 							<button mat-icon-button
 									color="accent"
@@ -97,7 +111,7 @@
 						}">
 						<div class="file-explorer__item bx-w-100 bx-d-flex bx-justify-content-between bx-align-items-center">
 							<div class="file-explorer__folder"
-								 [ngClass]="{'bx-ml-2': !collection.HasChildren}">
+								 [ngClass]="{'bx-ml-7': !collection.HasChildren}">
 								<button mat-icon-button
 										aria-label="Example icon button with a vertical three dot icon"
 										(click)="HandleDoubleClick($event, collection)"
@@ -118,10 +132,10 @@
 							</div>
 							<div class="bx-d-flex bx-justify-content-evenly bx-align-items-center">
 								<div>
-									<span class="collections__bookmark-count">{{collection.Bookmarks?.length}}</span>
+									<span class="collections__bookmark-count">{{collection.TotalBookmarks}}</span>
 								</div>
 								<app-directory-menu [RespectiveBookmarkCollection]="collection"
-													(CollectionUpdated)="MarkCollectionsForDeletion($event)"></app-directory-menu>
+													(CollectionUpdated)="HandleDirectoryMenuAction($event)"></app-directory-menu>
 							</div>
 						</div>
 					</mat-list-item>
@@ -144,7 +158,7 @@
 								</p>
 							</div>
 							<div>
-								<span class="collections__bookmark-count">{{pendingCollection.Bookmarks?.length}}</span>
+								<span class="collections__bookmark-count">{{pendingCollection.BookmarksDecrypted?.length}}</span>
 							</div>
 						</div>
 					</mat-list-item>
@@ -211,17 +225,17 @@
 					<div class="bx-h-100">
 						<div class="bookmarks__header bx-d-flex bx-justify-content-between">
 							<p>{{ActiveCollection?.Title}}</p>
-							<span>{{ActiveCollection?.Bookmarks?.length}}</span>
+							<span>{{ActiveCollection?.BookmarksDecrypted?.length}}</span>
 						</div>
 						<hr />
-						<div *ngFor="let bookmark of ActiveCollection?.Bookmarks">
+						<div *ngFor="let bookmark of ActiveCollection?.BookmarksDecrypted">
 							<a [href]="SanitizeUrl(bookmark.Url)"
 							   target="_blank">
 								{{bookmark.Title}}
 							</a>
 							<mat-divider></mat-divider>
 						</div>
-						<ng-container *ngIf="ActiveCollection?.Bookmarks?.length == 0">
+						<ng-container *ngIf="ActiveCollection?.BookmarksDecrypted?.length == 0">
 							<div class="bx-w-100 bx-h-100 bx-d-flex bx-align-items-center bx-justify-content-center">
 								<p>0 saved bookmarks.</p>
 							</div>
@@ -240,12 +254,13 @@
 				mode="side"
 				position="end">
 		<div class="example-sidenav-content">
-			<button type="button"
-					mat-button
+			<button mat-icon-button
+					color="accent"
+					aria-label="Close add bookmark drawer"
 					(click)="drawer.toggle()">
-				Toggle sidenav
+				<mat-icon>close</mat-icon>
 			</button>
-			<p>Add new bookmark to {{ActiveCollection?.Title}}</p>
+			<p class="add-bookmark__title">Add new bookmark to {{ActiveCollection?.Title}}</p>
 			<form class="example-form"
 				  [formGroup]="AddBookmarkFormGroup"
 				  (ngSubmit)="AddNewBookmark()">
@@ -275,7 +290,8 @@
 						mat-raised-button
 						color="accent"
 						[disabled]="AddBookmarkFormGroup.invalid"
-						aria-label="Import Bookmarks">Save</button>
+						aria-label="Import Bookmarks"
+						class="bx-w-100">Save</button>
 			</form>
 		</div>
 	</mat-drawer>

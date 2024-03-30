@@ -3,9 +3,15 @@
 		[matMenuTriggerFor]="appMenu">
 	<mat-icon>more_vert</mat-icon>
 </button>
-
 <mat-menu #appMenu="matMenu">
 	<ng-template matMenuContent>
+		<button mat-menu-item
+				aria-label="Create a collection"
+				title="Create a collection"
+				(click)="AddCollection()">
+			<mat-icon>create_new_folder</mat-icon>
+			Add
+		</button>
 		<button mat-menu-item
 				aria-label="Delete folder"
 				title="Delete folder"

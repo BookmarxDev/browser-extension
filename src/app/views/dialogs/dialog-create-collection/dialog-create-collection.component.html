@@ -1,0 +1,47 @@
+<section>
+	<p class="controls__label">Create a new collection</p>
+	<div class="bx-d-flex bx-justify-content-evenly">
+		<form class="form-identity"
+			  [formGroup]="CreateCollectionForm"
+			  (ngSubmit)="ProcessForm()">
+			<ng-container *ngIf="FormError != ''">
+				<mat-card class="bx-warn-card form-identity__warn">{{ FormError }}</mat-card>
+			</ng-container>
+			<mat-form-field class="bx-w-100">
+				<mat-label>Collection Title</mat-label>
+				<input matInput
+					   type="text"
+					   name="collectionTitle"
+					   id="collectionTitle"
+					   autocomplete="off"
+					   placeholder="Ex. Neat Stuff"
+					   formControlName="collectionTitle"
+					   required>
+			</mat-form-field>
+			<mat-error *ngIf="CollectionTitle?.invalid && (CollectionTitle?.dirty && CollectionTitle?.touched)">
+				<div *ngIf="CollectionTitle.errors.required">
+					Title is required.
+				</div>
+				<div *ngIf="CollectionTitle.errors.minLength">
+					Title must be at least 3 characters.
+				</div>
+			</mat-error>
+			<br />
+			<button mat-raised-button
+					color="accent"
+					class="bx-w-100"
+					type="submit"
+					[disabled]="CreateCollectionForm.invalid">
+				Create
+			</button>
+			<br />
+			<button mat-raised-button
+					color="warn"
+					aria-label="Cancel and close create collection popup"
+					class="bx-w-100"
+					(click)="CloseDialog()">
+				Cancel
+			</button>
+		</form>
+	</div>
+</section>

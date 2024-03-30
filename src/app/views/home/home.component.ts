@@ -9,12 +9,19 @@ import { CdkDragDrop, moveItemInArray, CdkDragStart } from '@angular/cdk/drag-dr
 import { BookmarkCollection } from 'src/app/domain/bookmarks/entities/bookmark-collection';
 import * as uuid from 'uuid';
 import { Bookmark } from 'src/app/domain/bookmarks/entities/bookmark';
-import { BlockUIService } from 'ng-block-ui';
+import { BlockUI, NgBlockUI } from 'ng-block-ui';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AbstractControl, FormControl, FormGroup, FormGroupDirective, NgForm, Validators } from '@angular/forms';
 import { ErrorStateMatcher } from '@angular/material/core';
 import { BookmarkImportStateType } from 'src/app/domain/bookmarks/enums/bookmark-import-state-type';
 import { MatMenu } from '@angular/material/menu';
+import * as openpgp from 'openpgp';
+import { GetAllBookmarksResponse } from 'src/app/domain/bookmarks/models/get-all-bookmarks-response';
+import { DirectoryMenuAction } from 'src/app/domain/bookmarks/models/directory-menu-action';
+import { DirectoryMenuChangeType } from 'src/app/domain/bookmarks/enums/directory-menu-change-type';
+import { MatSidenav } from '@angular/material/sidenav';
+import { MatDialog } from '@angular/material/dialog';
+import { DialogCreateCollectionComponent } from '../dialogs/dialog-create-collection/dialog-create-collection.component';
 
 /** Error when invalid control is dirty, touched, or submitted. */
 export class MyErrorStateMatcher implements ErrorStateMatcher
@@ -39,15 +46,20 @@ export class HomeComponent extends BasePageDirective
 
 	private isDraggingSide: boolean = false;
 
+	private encryptedPrivateKey: string = "";
+
+	@BlockUI()
+	private _blockUI: NgBlockUI;
+
 	constructor(
 		private _route: ActivatedRoute,
 		private _titleService: Title,
 		private _authService: AuthService,
 		private _bookmarksService: BookmarksService,
-		private _blockUI: BlockUIService,
 		private _cdr: ChangeDetectorRef,
 		private _sanitizer: DomSanitizer,
-		private _snackBar: MatSnackBar)
+		private _snackBar: MatSnackBar,
+		private _dialog: MatDialog)
 	{
 		super(_route, _titleService);
 	}
@@ -80,6 +92,9 @@ export class HomeComponent extends BasePageDirective
 	@ViewChild('navmenu', { static: true })
 	navMenu: MatMenu;
 
+	@ViewChild('drawer', { static: true })
+	drawer: MatSidenav;
+
 	public AddBookmarkFormGroup: FormGroup;
 
 	public get bookmarkTitleControl(): AbstractControl
@@ -92,6 +107,8 @@ export class HomeComponent extends BasePageDirective
 		return this.AddBookmarkFormGroup.get('bookmarkUrl');
 	}
 
+	public ShowProgressBar: boolean = false;
+
 	public override ngOnInit(): void
 	{
 		super.ngOnInit();
@@ -101,18 +118,72 @@ export class HomeComponent extends BasePageDirective
 			bookmarkUrl: new FormControl('', [Validators.required])
 		});
 
+		this.ShowProgressBar = true;
+		this._blockUI.start();
 		this._bookmarksService.GetAll()
 			.subscribe({
-				next: (result: BookmarkCollection[]) =>
+				next: async (result: GetAllBookmarksResponse) =>
 				{
-					this.BookmarkCollections = [...result];
-					this.ActiveCollection = this.BookmarkCollections[0];
-					this._cdr.detectChanges();
-					console.log(this.BookmarkCollections);
+					if (result != null && result?.BookmarkCollections?.length > 0)
+					{
+						// This is going to be lengthy
+						let decryptedCollections: BookmarkCollection[] = [];
+
+						let user = this._authService.GetCurrentUser();
+						this.encryptedPrivateKey = result.EncryptedPrivateKey;
+
+						const privateKey = await openpgp.decryptKey({
+							privateKey: await openpgp.readPrivateKey({ armoredKey: result.EncryptedPrivateKey }),
+							passphrase: user.UserHash
+						});
+
+						for (let i = 0; i < result.BookmarkCollections.length; i++)
+						{
+							let collection = result.BookmarkCollections[i];
+							let mappedCollection = new BookmarkCollection();
+							mappedCollection.Map(collection);
+
+							let collectionTitleArmored = await openpgp.readMessage({
+								armoredMessage: collection.Title // Parse armored message
+							});
+
+							// Consider signing with pub key
+							let { data: decryptedTitle } = await openpgp.decrypt({
+								message: collectionTitleArmored,
+								decryptionKeys: privateKey
+							});
+
+							mappedCollection.Title = decryptedTitle;
+
+							// check signature validity (signed messages only)
+							// try {
+							//     await signatures[0].verified; // throws on invalid signature
+							//     console.log('Signature is valid');
+							// } catch (e) {
+							//     throw new Error('Signature could not be verified: ' + e.message);
+							// }
+
+							decryptedCollections.push(mappedCollection);
+						}
+
+						this.BookmarkCollections = [...decryptedCollections];
+						//this.ActiveCollection = this.BookmarkCollections[0];
+						this.OpenBookmarkCollection(null, this.BookmarkCollections[0]);
+					}
+					else
+					{
+						this.BookmarkImportState = BookmarkImportStateType.NoExistingBookmarks;
+					}
 				},
 				error: (error) =>
 				{
 					console.log(error);
+				},
+				complete: () =>
+				{
+					this._cdr.detectChanges();
+					this.ShowProgressBar = false;
+					this._blockUI.stop();
 				}
 			});
 	}
@@ -127,16 +198,20 @@ export class HomeComponent extends BasePageDirective
 		// Because this is a reference type, any changes made to the reference
 		// have an effect on the original instance, so this update also modifies
 		// the main bookmark collection value. Neat.
-		this.ActiveCollection.Bookmarks.push(newBookmark);
+		this.ActiveCollection.BookmarksDecrypted.push(newBookmark);
 
 		this.UpsertMainBookmarks(true);
 
 		this.AddBookmarkFormGroup.reset();
 		this.AddBookmarkFormGroup.markAsPristine();
+		this.AddBookmarkFormGroup.markAsUntouched();
+		this.drawer.toggle();
 	}
 
-	public UpsertMainBookmarks(showSnackBar: boolean = false): void
+	public async UpsertMainBookmarks(showSnackBar: boolean = false): Promise<void>
 	{
+		this._blockUI.start();
+
 		try
 		{
 			// Add the pending import collections to the main collections.
@@ -155,7 +230,44 @@ export class HomeComponent extends BasePageDirective
 			return;
 		}
 
-		this._bookmarksService.SyncBookmarks(this.BookmarkCollections)
+		let user = this._authService.GetCurrentUser();
+		let publicKey = await openpgp.readKey({ armoredKey: user.PublicKey });
+		let encryptedCollections: BookmarkCollection[] = [];
+
+		// Encrypt!
+		// Loop through every single collection and encrypt what needs encrypting.
+		for (let i = 0; i < this.BookmarkCollections.length; i++)
+		{
+			let collection = this.BookmarkCollections[i];
+			let collectionEncrypted = new BookmarkCollection();
+			collectionEncrypted.Map(collection);
+
+			let encryptedTitle = await openpgp.encrypt({
+				message: await openpgp.createMessage({ text: collection.Title }),
+				encryptionKeys: publicKey
+				// Consider adding signing keys
+			});
+
+			collectionEncrypted.Title = encryptedTitle;
+
+			// Only encrypt if there are bookmarks.
+			if (collection.BookmarksDecrypted?.length > 0)
+			{
+				collectionEncrypted.TotalBookmarks = collection.BookmarksDecrypted.length;
+
+				let encryptedBookmarksJson = await openpgp.encrypt({
+					message: await openpgp.createMessage({ text: JSON.stringify(collection.BookmarksDecrypted) }),
+					encryptionKeys: publicKey
+					// Consider adding signing keys
+				});
+
+				collectionEncrypted.BookmarksEncryptedJSON = encryptedBookmarksJson;
+			}
+
+			encryptedCollections.push(collectionEncrypted);
+		}
+
+		this._bookmarksService.SyncBookmarks(encryptedCollections)
 			.subscribe({
 				next: (result: BookmarkCollection[]) =>
 				{
@@ -170,6 +282,10 @@ export class HomeComponent extends BasePageDirective
 				error: (error) =>
 				{
 					console.log(error);
+				},
+				complete: () =>
+				{
+					this._blockUI.stop();
 				}
 			});
 	}
@@ -210,6 +326,26 @@ export class HomeComponent extends BasePageDirective
 		});
 
 		this.UpsertMainBookmarks();
+	}
+
+	public AddNewRootFolder(): void
+	{
+		let rootCollection = new BookmarkCollection(-1, '', null);
+		const dialogRef = this._dialog.open(DialogCreateCollectionComponent, {
+			width: '300px',
+			data: rootCollection
+		});
+
+		dialogRef.afterClosed().subscribe(result =>
+		{
+			if (result)
+			{
+				this.BookmarkCollections.unshift(result);
+				this.BookmarkImportState = BookmarkImportStateType.None;
+				this._cdr.detectChanges();
+				this.UpsertMainBookmarks(true);
+			}
+		});
 	}
 
 	public OpenAllFolders(): void
@@ -265,10 +401,12 @@ export class HomeComponent extends BasePageDirective
 
 	public OpenBookmarkCollection($event: Event, collection: BookmarkCollection): void
 	{
-		$event.preventDefault();
+		$event?.preventDefault();
 		if (this.BookmarkImportState == BookmarkImportStateType.None)
 		{
-			this.singleClickTimer = setTimeout(() =>
+			this.ShowProgressBar = true;
+
+			this.singleClickTimer = setTimeout(async () =>
 			{
 				if (this.IsDragging)
 				{
@@ -276,9 +414,53 @@ export class HomeComponent extends BasePageDirective
 					return;
 				}
 
-				this.ActiveCollection = collection;
-				this._cdr.detectChanges();
+				if (collection.BookmarksDecrypted?.length > 0)
+				{
+					// The bookmarks were already decrypted, let's not do it again :/
+					this.ActiveCollection = collection;
+				}
+				else if (collection.BookmarksEncryptedJSON != "")
+				{
+					// Decrypt the JSON blob of bookmarks and then map and set them into the array for viewing.
+					let user = this._authService.GetCurrentUser();
+
+					const privateKey = await openpgp.decryptKey({
+						privateKey: await openpgp.readPrivateKey({ armoredKey: this.encryptedPrivateKey }),
+						passphrase: user.UserHash
+					});
+
+					let bookmarksArmored = await openpgp.readMessage({
+						armoredMessage: collection.BookmarksEncryptedJSON // Parse armored message
+					});
+
+					// Consider signing with pub key
+					let { data: decryptedBookmarks } = await openpgp.decrypt({
+						message: bookmarksArmored,
+						decryptionKeys: privateKey
+					});
+
+					let bookmarksRaw = JSON.parse(decryptedBookmarks) as Bookmark[];
+
+					if (bookmarksRaw != null && typeof (bookmarksRaw) != "undefined")
+					{
+						// Start to map
+						let decryptedBookmarks = [];
+
+						for (let i = 0; i < bookmarksRaw.length; i++)
+						{
+							let bookmark = new Bookmark();
+							bookmark.Map(bookmarksRaw[i]);
+							decryptedBookmarks.push(bookmark);
+						}
+
+						collection.BookmarksDecrypted = decryptedBookmarks;
+					}
+				}
 			}, 250);
+
+			this.ActiveCollection = collection;
+			this._cdr.detectChanges();
+			this.ShowProgressBar = false;
 		}
 		else
 		{
@@ -318,6 +500,7 @@ export class HomeComponent extends BasePageDirective
 	 */
 	public HandleDrop(viewModelCollection: CdkDragDrop<BookmarkCollection[]>)
 	{
+		this.ShowProgressBar = true;
 		this.BodyElement.classList.remove('inheritCursors');
 		this.BodyElement.style.cursor = 'unset';
 
@@ -331,29 +514,18 @@ export class HomeComponent extends BasePageDirective
 			let movedCollection = this.BookmarkCollections[viewModelCollection.currentIndex];
 			let leadingCollection = this.BookmarkCollections[viewModelCollection.currentIndex + 1];
 
-			// Gross hack to get around some quirks with drag and drop
-			// Check if the item was just dropped into a child collection
-			// that is currently collapsed. If it was then we need to move
-			// it down to the first instance of an array location where the
-			// collection is not collapsed.
-			// This needs to take place for both up and down movements.
-			if (leadingCollection.IsCollapsed)
+			if (laggingCollection != null && laggingCollection.ChildCollectionsCollapsed)
 			{
-				let leadingCollectionIndex = this.BookmarkCollections.indexOf(leadingCollection);
+				let laggingCollectionChildren = this.GetChildCollections(laggingCollection.Id);
 
-				for (let i = leadingCollectionIndex; i < this.BookmarkCollections.length; i++)
-				{
-					// Loop through until we find the first collection that isn't collapsed and then move
-					// the collection to the position just before it. This is a gross hack, but because 
-					// of how drag and drop works and how nested collections function we have to do it.
-					// Also update the leading collection as it's now different.
-					leadingCollection = this.BookmarkCollections[i];
-					if (!leadingCollection.IsCollapsed)
-					{
-						moveItemInArray(this.BookmarkCollections, viewModelCollection.currentIndex, i - 1);
-						break;
-					}
-				}
+				let laggingCollectionChildrenCount = laggingCollectionChildren.length;
+
+				let movedCollectionIndex = viewModelCollection.currentIndex + laggingCollectionChildrenCount;
+				moveItemInArray(this.BookmarkCollections, viewModelCollection.currentIndex, movedCollectionIndex);
+
+				laggingCollection = this.BookmarkCollections[movedCollectionIndex - 1];
+				movedCollection = this.BookmarkCollections[movedCollectionIndex];
+				leadingCollection = this.BookmarkCollections[movedCollectionIndex + 1];
 			}
 
 			// The way in which the user is dragging the item and how Angular Material
@@ -376,6 +548,12 @@ export class HomeComponent extends BasePageDirective
 					// Kick out as we don't need to perform any logic.
 					return;
 				}
+				else if (leadingCollection == null)
+				{
+					// Collection was dragged to the very bottom so reparent to root.
+					movedCollection.Depth = 0;
+					movedCollection.ParentId = null;
+				}
 				else
 				{
 					// Simply move the folder to the same level as the leading collection.
@@ -388,6 +566,12 @@ export class HomeComponent extends BasePageDirective
 				// Nothing happened so we don't do anything.
 				return;
 			}
+			else if (laggingCollection == null || leadingCollection == null)
+			{
+				// The collection was dropped at the very top or very bottom and now has no parent.
+				movedCollection.Depth = 0;
+				movedCollection.ParentId = null;
+			}
 			else
 			{
 				// When you drag UP the target slides down so we need to use the lagging collection.
@@ -398,7 +582,6 @@ export class HomeComponent extends BasePageDirective
 			// To figure out the depth change, take the new value minus the old.
 			let depthAdjustment: number = movedCollection.Depth - oldCollectionDepth;
 
-			// NOTE: DO NOT CHANGE THIS LOGIC THIS WORKS GREAT
 			this.ReparentChildItemsOfMovedCollection(movedCollection, depthAdjustment);
 
 			this.UpsertMainBookmarks(true);
@@ -407,6 +590,8 @@ export class HomeComponent extends BasePageDirective
 		{
 			this.ShowFinishImportingBookmarksWarning();
 		}
+
+		this.ShowProgressBar = false;
 	}
 
 	private ReparentChildItemsOfMovedCollection(movedCollection: BookmarkCollection, depthAdjustment: number): void
@@ -545,7 +730,6 @@ export class HomeComponent extends BasePageDirective
 				}
 
 				this.BookmarkCollectionsPendingImport = [...collections];
-				console.log(this.BookmarkCollectionsPendingImport);
 				this._cdr.detectChanges();
 			}
 		});
@@ -560,80 +744,111 @@ export class HomeComponent extends BasePageDirective
 	 * But still...yuck.
 	 * @param deletedCollection 
 	 */
-	public MarkCollectionsForDeletion(deletedCollection: BookmarkCollection): void
+	public HandleDirectoryMenuAction(changeAction: DirectoryMenuAction): void
 	{
-		if (deletedCollection != null && deletedCollection.IsSoftDeleted)
+		let original = changeAction.OriginalBookmarkCollection;
+		let added = changeAction.NewBookmarkCollection;
+
+		if (changeAction.ChangeType == DirectoryMenuChangeType.Add)
 		{
-			let deletedCollections = [];
-
-			let childCollections = this.GetChildCollections(deletedCollection.Id);
-
-			childCollections.forEach((collection) =>
+			for (let i = 0; i < this.BookmarkCollections.length; i++)
 			{
-				collection.IsSoftDeleted = true;
-			});
-
-			deletedCollections = [deletedCollection, ...childCollections];
-
-			// We'll loop over the deleted collections, first.
-			for (let i = 0; i < deletedCollections.length; i++)
-			{
-				let currentDeletedCollection: BookmarkCollection = deletedCollections[i];
-
-				// Next, find the corresponding item in the main collections list.
-				for (let mi = 0; mi < this.BookmarkCollections.length; mi++)
+				if (this.BookmarkCollections[i].Id === original.Id)
 				{
-					let currentMainCollection = this.BookmarkCollections[mi];
-					if (currentDeletedCollection.Id === currentMainCollection.Id)
-					{
-						// Update it to show deleted then immediately bail to go on to the next and reduce iterations.
-						currentMainCollection.IsSoftDeleted = true;
-					}
+					// i + 1 as we want it to be a child element, now.
+					this.BookmarkCollections.splice(i + 1, 0, added);
+					break;
 				}
 			}
-
-			// Finally, we're going to completely reconstruct the existing collections
-			// and also build up a new deleted collections list. Then, when we get those
-			// created we'll rewrite both the BookmarkCollections and DeletedBookmarkCollections
-			// arrays with the new arrays. This is better than actively deleting elements
-			// at specified array positions, since we'll be modifying the array we're working on.
-			let collectionsToKeep = [];
-			let collectionsToDelete = [];
-			for (let index = 0; index < this.BookmarkCollections.length; index++)
-			{
-				let currentCollection = this.BookmarkCollections[index];
-
-				if (currentCollection.IsSoftDeleted)
-				{
-					// The root folder which was just deleted should be reparented to root.
-					if (currentCollection.Id == deletedCollection.Id)
-					{
-						currentCollection.ParentId = null;
-						currentCollection.Depth = 0;
-					}
-
-					collectionsToDelete.push(currentCollection);
-				}
-				else
-				{
-					collectionsToKeep.push(currentCollection);
-				}
-			}
-
-			// Overwrite the existing bookmark collections.
-			this.BookmarkCollections = [...collectionsToKeep];
-			collectionsToDelete.forEach((deletedCollection) =>
-			{
-				this.BookmarkCollectionsDeleted.push(deletedCollection);
-			});
-
-			this._cdr.detectChanges();
-
-			this.UpsertMainBookmarks();
-
-			// TODO: Circle back.
-			//this.UpsertDeletedBookmarks(true);
 		}
+		else if (changeAction.ChangeType == DirectoryMenuChangeType.Remove)
+		{
+			if (original != null && original.IsSoftDeleted)
+			{
+				let childCollections = this.GetChildCollections(original.Id);
+
+				// To keep it simple, just hard delete from the array.
+				for (let i = 0; i < this.BookmarkCollections.length; i++)
+				{
+					if (this.BookmarkCollections[i].Id === original.Id)
+					{
+						// Nuke that root element and all child elements.
+						let deleteCount = childCollections?.length == 0 ? 1 : childCollections.length;
+						this.BookmarkCollections.splice(i, deleteCount);
+					}
+				}
+
+				// TODO: Circle back.
+				// let deletedCollections = [];
+				// childCollections.forEach((collection) =>
+				// {
+				// 	collection.IsSoftDeleted = true;
+				// });
+
+				// deletedCollections = [original, ...childCollections];
+
+				// // We'll loop over the deleted collections, first.
+				// for (let i = 0; i < deletedCollections.length; i++)
+				// {
+				// 	let currentDeletedCollection: BookmarkCollection = deletedCollections[i];
+
+				// 	// Next, find the corresponding item in the main collections list.
+				// 	for (let mi = 0; mi < this.BookmarkCollections.length; mi++)
+				// 	{
+				// 		let currentMainCollection = this.BookmarkCollections[mi];
+				// 		if (currentDeletedCollection.Id === currentMainCollection.Id)
+				// 		{
+				// 			// Update it to show deleted then immediately bail to go on to the next and reduce iterations.
+				// 			currentMainCollection.IsSoftDeleted = true;
+				// 		}
+				// 	}
+				// }
+
+				// // Finally, we're going to completely reconstruct the existing collections
+				// // and also build up a new deleted collections list. Then, when we get those
+				// // created we'll rewrite both the BookmarkCollections and DeletedBookmarkCollections
+				// // arrays with the new arrays. This is better than actively deleting elements
+				// // at specified array positions, since we'll be modifying the array we're working on.
+				// let collectionsToKeep = [];
+				// let collectionsToDelete = [];
+				// for (let index = 0; index < this.BookmarkCollections.length; index++)
+				// {
+				// 	let currentCollection = this.BookmarkCollections[index];
+
+				// 	if (currentCollection.IsSoftDeleted)
+				// 	{
+				// 		// The root folder which was just deleted should be reparented to root.
+				// 		if (currentCollection.Id == original.Id)
+				// 		{
+				// 			currentCollection.ParentId = null;
+				// 			currentCollection.Depth = 0;
+				// 		}
+
+				// 		collectionsToDelete.push(currentCollection);
+				// 	}
+				// 	else
+				// 	{
+				// 		collectionsToKeep.push(currentCollection);
+				// 	}
+				// }
+
+				// // Overwrite the existing bookmark collections.
+				// this.BookmarkCollections = [...collectionsToKeep];
+				// collectionsToDelete.forEach((deletedCollection) =>
+				// {
+				// 	this.BookmarkCollectionsDeleted.push(deletedCollection);
+				// });
+
+				//this.UpsertDeletedBookmarks(true);
+			}
+		}
+		else if (changeAction.ChangeType == DirectoryMenuChangeType.Rename)
+		{
+
+		}
+
+		this._cdr.detectChanges();
+		this.UpsertMainBookmarks(true);
 	}
 
 	//#region Private Methods
@@ -676,7 +891,7 @@ export class HomeComponent extends BasePageDirective
 				{
 					// If the URL has a value it's a bookmark so add it.
 					let bookmark = new Bookmark(child.title, child.url, bookmarkCollection.Id);
-					bookmarkCollection.Bookmarks.push(bookmark);
+					bookmarkCollection.BookmarksDecrypted.push(bookmark);
 					return;
 				}
 				else if (child.children)
@@ -712,6 +927,11 @@ export class HomeComponent extends BasePageDirective
 	 */
 	private IsChildCollection(targetCollection: BookmarkCollection, activeCollection: BookmarkCollection): boolean
 	{
+		if (targetCollection == null)
+		{
+			return false;
+		}
+
 		if (targetCollection.ParentId === activeCollection.Id)
 		{
 			return true;

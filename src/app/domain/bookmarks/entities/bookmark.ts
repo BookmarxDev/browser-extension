@@ -2,12 +2,15 @@ import * as uuid from 'uuid';
 
 export class Bookmark
 {
-	constructor(title: string, url: string, parentId: string)
+	constructor(title?: string, url?: string, parentId?: string)
 	{
-		this.Id = uuid.v4();
-		this.Title = title;
-		this.Url = url;
-		this.ParentId = parentId;
+		if (title != null && url != null && parentId != null)
+		{
+			this.Id = uuid.v4();
+			this.Title = title;
+			this.Url = url;
+			this.ParentId = parentId;
+		}
 	}
 
 	public DateTimeAddedUTC: string;
@@ -34,4 +37,16 @@ export class Bookmark
 	public Title: string;
 
 	public Url: string;
+
+	public Map(bookmark: Bookmark): void
+	{
+		this.DateTimeAddedUTC = bookmark.DateTimeAddedUTC;
+		this.Description = bookmark.Description;
+		this.Id = bookmark.Id;
+		this.Index = bookmark.Index;
+		this.Note = bookmark.Note;
+		this.ParentId = bookmark.ParentId;
+		this.Title = bookmark.Title;
+		this.Url = bookmark.Url;
+	}
 }
