@@ -2,8 +2,6 @@ import { User } from "@angular/fire/auth";
 
 export class ActiveUserDetail
 {
-	public EncryptedPrivateKey: string | null = null;
-
 	public IsSubscriptionValid: boolean = false;
 
 	public MemberAccountID: string = "";

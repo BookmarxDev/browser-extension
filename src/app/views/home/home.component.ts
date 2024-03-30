@@ -20,6 +20,8 @@ import { GetAllBookmarksResponse } from 'src/app/domain/bookmarks/models/get-all
 import { DirectoryMenuAction } from 'src/app/domain/bookmarks/models/directory-menu-action';
 import { DirectoryMenuChangeType } from 'src/app/domain/bookmarks/enums/directory-menu-change-type';
 import { MatSidenav } from '@angular/material/sidenav';
+import { MatDialog } from '@angular/material/dialog';
+import { DialogCreateCollectionComponent } from '../dialogs/dialog-create-collection/dialog-create-collection.component';
 
 /** Error when invalid control is dirty, touched, or submitted. */
 export class MyErrorStateMatcher implements ErrorStateMatcher
@@ -44,6 +46,8 @@ export class HomeComponent extends BasePageDirective
 
 	private isDraggingSide: boolean = false;
 
+	private encryptedPrivateKey: string = "";
+
 	@BlockUI()
 	private _blockUI: NgBlockUI;
 
@@ -54,7 +58,8 @@ export class HomeComponent extends BasePageDirective
 		private _bookmarksService: BookmarksService,
 		private _cdr: ChangeDetectorRef,
 		private _sanitizer: DomSanitizer,
-		private _snackBar: MatSnackBar)
+		private _snackBar: MatSnackBar,
+		private _dialog: MatDialog)
 	{
 		super(_route, _titleService);
 	}
@@ -125,14 +130,12 @@ export class HomeComponent extends BasePageDirective
 						let decryptedCollections: BookmarkCollection[] = [];
 
 						let user = this._authService.GetCurrentUser();
-						user.EncryptedPrivateKey = result.EncryptedPrivateKey;
+						this.encryptedPrivateKey = result.EncryptedPrivateKey;
 
 						const privateKey = await openpgp.decryptKey({
 							privateKey: await openpgp.readPrivateKey({ armoredKey: result.EncryptedPrivateKey }),
 							passphrase: user.UserHash
 						});
-
-						this._authService.SetUserData(user);
 
 						for (let i = 0; i < result.BookmarkCollections.length; i++)
 						{
@@ -325,6 +328,26 @@ export class HomeComponent extends BasePageDirective
 		this.UpsertMainBookmarks();
 	}
 
+	public AddNewRootFolder(): void
+	{
+		let rootCollection = new BookmarkCollection(-1, null, '');
+		const dialogRef = this._dialog.open(DialogCreateCollectionComponent, {
+			width: '300px',
+			data: rootCollection
+		});
+
+		dialogRef.afterClosed().subscribe(result =>
+		{
+			if (result)
+			{
+				this.BookmarkCollections.unshift(result);
+				this.BookmarkImportState = BookmarkImportStateType.None;
+				this._cdr.detectChanges();
+				this.UpsertMainBookmarks(true);
+			}
+		});
+	}
+
 	public OpenAllFolders(): void
 	{
 		this.BookmarkCollections.forEach((collection) =>
@@ -402,7 +425,7 @@ export class HomeComponent extends BasePageDirective
 					let user = this._authService.GetCurrentUser();
 
 					const privateKey = await openpgp.decryptKey({
-						privateKey: await openpgp.readPrivateKey({ armoredKey: user.EncryptedPrivateKey }),
+						privateKey: await openpgp.readPrivateKey({ armoredKey: this.encryptedPrivateKey }),
 						passphrase: user.UserHash
 					});
 
