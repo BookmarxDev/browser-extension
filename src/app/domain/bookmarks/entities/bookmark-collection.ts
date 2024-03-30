@@ -89,7 +89,6 @@ export class BookmarkCollection
 
 	public Map(collection: BookmarkCollection): void
 	{
-		this.BookmarksDecrypted = collection.BookmarksDecrypted;
 		this.BookmarksEncryptedJSON = collection.BookmarksEncryptedJSON;
 		this.ChildCollectionsCollapsed = collection.ChildCollectionsCollapsed;
 		this.DateTimeAddedUTC = collection.DateTimeAddedUTC;

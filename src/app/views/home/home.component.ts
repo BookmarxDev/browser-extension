@@ -19,6 +19,7 @@ import * as openpgp from 'openpgp';
 import { GetAllBookmarksResponse } from 'src/app/domain/bookmarks/models/get-all-bookmarks-response';
 import { DirectoryMenuAction } from 'src/app/domain/bookmarks/models/directory-menu-action';
 import { DirectoryMenuChangeType } from 'src/app/domain/bookmarks/enums/directory-menu-change-type';
+import { MatSidenav } from '@angular/material/sidenav';
 
 /** Error when invalid control is dirty, touched, or submitted. */
 export class MyErrorStateMatcher implements ErrorStateMatcher
@@ -85,6 +86,9 @@ export class HomeComponent extends BasePageDirective
 
 	@ViewChild('navmenu', { static: true })
 	navMenu: MatMenu;
+
+	@ViewChild('drawer', { static: true })
+	drawer: MatSidenav;
 
 	public AddBookmarkFormGroup: FormGroup;
 
@@ -197,6 +201,8 @@ export class HomeComponent extends BasePageDirective
 
 		this.AddBookmarkFormGroup.reset();
 		this.AddBookmarkFormGroup.markAsPristine();
+		this.AddBookmarkFormGroup.markAsUntouched();
+		this.drawer.toggle();
 	}
 
 	public async UpsertMainBookmarks(showSnackBar: boolean = false): Promise<void>
@@ -241,41 +247,19 @@ export class HomeComponent extends BasePageDirective
 
 			collectionEncrypted.Title = encryptedTitle;
 
-			let encryptedBookmarksJson = await openpgp.encrypt({
-				message: await openpgp.createMessage({ text: JSON.stringify(collection.BookmarksDecrypted) }),
-				encryptionKeys: publicKey
-				// Consider adding signing keys
-			});
+			// Only encrypt if there are bookmarks.
+			if (collection.BookmarksDecrypted?.length > 0)
+			{
+				collectionEncrypted.TotalBookmarks = collection.BookmarksDecrypted.length;
 
-			collectionEncrypted.BookmarksEncryptedJSON = encryptedBookmarksJson;
+				let encryptedBookmarksJson = await openpgp.encrypt({
+					message: await openpgp.createMessage({ text: JSON.stringify(collection.BookmarksDecrypted) }),
+					encryptionKeys: publicKey
+					// Consider adding signing keys
+				});
 
-			// This is very process intensive. And honestly we have no need to
-			// see metadata about the bookmarks themselves. We only really need
-			// metadata around the collections themselves. So, let's encrypt the
-			// entire array of bookmarks all at once. Similar, conceptually, to
-			// encrypting the entire byte array of an image file, or any file.
-			// // Loop through each bookmark and encrypt what needs encrypting.
-			// if (collection.Bookmarks?.length > 0)
-			// {
-			// 	for (let bi = 0; bi < collection.Bookmarks.length; bi++)
-			// 	{
-			// 		let bookmark = collection.Bookmarks[bi];
-
-			// 		let encryptedBookmarkTitle = await openpgp.encrypt({
-			// 			message: await openpgp.createMessage({ text: bookmark.Title }),
-			// 			encryptionKeys: publicKey
-			// 			// Consider adding signing keys
-			// 		});
-			// 		bookmark.Title = encryptedBookmarkTitle;
-
-			// 		let encryptedBookmarkUrl = await openpgp.encrypt({
-			// 			message: await openpgp.createMessage({ text: bookmark.Url }),
-			// 			encryptionKeys: publicKey
-			// 			// Consider adding signing keys
-			// 		});
-			// 		bookmark.Url = encryptedBookmarkUrl;
-			// 	}
-			// }
+				collectionEncrypted.BookmarksEncryptedJSON = encryptedBookmarksJson;
+			}
 
 			encryptedCollections.push(collectionEncrypted);
 		}
@@ -448,12 +432,12 @@ export class HomeComponent extends BasePageDirective
 
 						collection.BookmarksDecrypted = decryptedBookmarks;
 					}
-
-					this.ActiveCollection = collection;
-					this._cdr.detectChanges();
-					this.ShowProgressBar = false;
 				}
 			}, 250);
+
+			this.ActiveCollection = collection;
+			this._cdr.detectChanges();
+			this.ShowProgressBar = false;
 		}
 		else
 		{

@@ -230,6 +230,14 @@ section
 
 	&__drawer
 	{
-		width: 300px;
+		width: 400px;
+		padding: 10px;
+		background-color: var(--clr-primary-800);
+	}
+
+	&__title
+	{
+		color: whitesmoke;
+		font-size: 16px;
 	}
 }

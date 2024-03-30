@@ -244,12 +244,13 @@
 				mode="side"
 				position="end">
 		<div class="example-sidenav-content">
-			<button type="button"
-					mat-button
+			<button mat-icon-button
+					color="accent"
+					aria-label="Close add bookmark drawer"
 					(click)="drawer.toggle()">
-				Toggle sidenav
+				<mat-icon>close</mat-icon>
 			</button>
-			<p>Add new bookmark to {{ActiveCollection?.Title}}</p>
+			<p class="add-bookmark__title">Add new bookmark to {{ActiveCollection?.Title}}</p>
 			<form class="example-form"
 				  [formGroup]="AddBookmarkFormGroup"
 				  (ngSubmit)="AddNewBookmark()">
@@ -279,7 +280,8 @@
 						mat-raised-button
 						color="accent"
 						[disabled]="AddBookmarkFormGroup.invalid"
-						aria-label="Import Bookmarks">Save</button>
+						aria-label="Import Bookmarks"
+						class="bx-w-100">Save</button>
 			</form>
 		</div>
 	</mat-drawer>
