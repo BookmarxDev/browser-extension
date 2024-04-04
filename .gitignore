@@ -45,5 +45,6 @@ Thumbs.db
 .angular
 
 # Custom files
-**/environment.prod.ts
 **/environment.ts
+**/environment.staging.ts
+**/environment.prod.ts

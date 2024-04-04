@@ -1,10 +1,11 @@
 {
   "name": "bookmarx",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build && node postbuild.js",
+    "build:dev": "ng build",
+    "build:staging": "ng build --configuration=staging",
     "dev": "ng serve --configuration=development --port=4200 --ssl true",
     "test": "ng test"
   },

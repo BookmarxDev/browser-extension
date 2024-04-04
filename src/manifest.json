@@ -1,14 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "Bookmarx - Private Bookmark Manager",
-  "description": "The private, encrypted bookmark manager.",
-  "version": "1.0",
+  "name": "Bookmarx — Private Bookmark Manager",
+  "description": "The private and encrypted bookmark manager.",
+  "version": "1.0.0",
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
     "sandbox": "sandbox allow-scripts allow-forms allow-popups allow-modals; script-src 'self' 'unsafe-inline' 'unsafe-eval'; child-src 'self';"
   },
   "permissions": [
-    "activeTab",
     "bookmarks"
   ],
   "action": {
